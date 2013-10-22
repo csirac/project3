@@ -44,3 +44,8 @@ compile
 run
 compile
 run
+compile
+run
+exit
+compile
+exit

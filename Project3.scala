@@ -28,11 +28,14 @@ object Pastry {
 
   /**nodes*/
   class Node(id:BigInt) extends Actor {
-    var routing = ArrayBuffer[BigInt]()/**routing array*/
-    var leaf = ArrayBuffer[BigInt]()/**leaf array*/
+    var R = ArrayBuffer[BigInt]()// routing array
+    var L_small = ArrayBuffer[BigInt]()// leaf array, smaller than us
+    var L_large = ArrayBuffer[BigInt]()// leaf array, larger than us
+    var Rn : Int = 0; // the number of columns of R
+    var Rm : Int = 0; // the number of rows of R
     def receive = {
       case route( msg : String, key : BigInt ) => {
-
+	
       }
       case IAmNeighbor(nrouting:ArrayBuffer[BigInt],nleaf:ArrayBuffer[BigInt]) => {
 	addRouting(nrouting)
@@ -42,6 +45,11 @@ object Pastry {
     def addRouting(nrouting:ArrayBuffer[BigInt]) = { /**add on to routing table*/
     }
     def addLeaf(nleaf:ArrayBuffer[BigInt]) = { /**add on to leaf tables*/
+    }
+
+    def index(i: Int, j: Int, n: Int, m: Int) {
+      //return 
+      
     }
   }
 
