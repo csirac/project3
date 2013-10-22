@@ -13,24 +13,22 @@ object Pastry {
     val system = ActorSystem("PastrySystem")
     var nodeArray = ArrayBuffer[ActorRef]()
     var counter = 0
+    var randomID:BigInt = 0
     while(counter<N){ /**make nodes*/
-      var nodey = system.actorOf(Props(classOf[Node],genID(base)), counter.toString)
+      randomID = IDtoBigInt(genID(base),base)
+      var nodey = system.actorOf(Props(classOf[Node],randomID), counter.toString)
       nodeArray = nodeArray += nodey
       counter += 1
     }
-    val a = genID(base)
-    println(a.toString)
-    val c = IDtoBigInt(a,base)
-    println(c)
-    println(BigInttoID(c,base).toString)
     system.shutdown
   }
 
   /**nodes*/
-  class Node(id:ArrayBuffer[Int]) extends Actor {
-    var neighborhood = Set[ActorRef]()
+  class Node(id:BigInt) extends Actor {
+    var routing = ArrayBuffer[BigInt]()/**routing array*/
+    var leaf = ArrayBuffer[BigInt]()/**leaf array*/
     def receive = {
-      case blah => {
+      case blah => { /**dummy message*/
       }
     }
   }
