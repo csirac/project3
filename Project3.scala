@@ -30,8 +30,8 @@ object Pastry {
     var R = ArrayBuffer[BigInt]()// routing array
     var L_small = ArrayBuffer[BigInt]()// leaf array, smaller than us
     var L_large = ArrayBuffer[BigInt]()// leaf array, larger than us
-    var Ln : Int = 0; // the number of columns of L
-    var Lm : Int = 0; // the number of rows of L
+    var Rn : Int = 0; // the number of columns of R
+    var Rm : Int = 0; // the number of rows of R
     def receive = {
       case route( msg : string, key : BigInt ) => {
 	
