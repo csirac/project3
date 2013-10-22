@@ -3,7 +3,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import scala.math
 
-case class route( msg : string, key : BigInt )
+case class route( msg : String, key : BigInt )
+case class IAmNeighbor(nrouting:ArrayBuffer[BigInt],nleaf:ArrayBuffer[BigInt]) /**send node table info*/
 
 object Pastry { 
 
@@ -30,9 +31,17 @@ object Pastry {
     var routing = ArrayBuffer[BigInt]()/**routing array*/
     var leaf = ArrayBuffer[BigInt]()/**leaf array*/
     def receive = {
-      case route( msg : string, key : BigInt ) => {
+      case route( msg : String, key : BigInt ) => {
 
       }
+      case IAmNeighbor(nrouting:ArrayBuffer[BigInt],nleaf:ArrayBuffer[BigInt]) => {
+	addRouting(nrouting)
+	addLeaf(nleaf)
+      }
+    }
+    def addRouting(nrouting:ArrayBuffer[BigInt]) = { /**add on to routing table*/
+    }
+    def addLeaf(nleaf:ArrayBuffer[BigInt]) = { /**add on to leaf tables*/
     }
   }
 
