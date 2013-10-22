@@ -3,7 +3,14 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import scala.math
 
-case class route( msg : string, key : BigInt )
+case class route( msg : String, key : BigInt )
+case class deliver( msg : String, key : BigInt )
+
+class IdRef {
+  var ref : ActorRef = null;
+  var id : BigInt = BigInt(-1);
+}
+
 
 object Pastry { 
 
@@ -27,19 +34,44 @@ object Pastry {
 
   /**nodes*/
   class Node(id:BigInt) extends Actor {
-    var R = ArrayBuffer[BigInt]()// routing array
-    var L_small = ArrayBuffer[BigInt]()// leaf array, smaller than us
-    var L_large = ArrayBuffer[BigInt]()// leaf array, larger than us
+    var R = ArrayBuffer[IdRef]()// routing array
+    var L_small = ArrayBuffer[IdRef]()// leaf array, smaller than us , starting with smallest
+    var L_large = ArrayBuffer[IdRef]()// leaf array, larger than us , starting with smallest
     var Rn : Int = 0; // the number of columns of R
     var Rm : Int = 0; // the number of rows of R
     def receive = {
-      case route( msg : string, key : BigInt ) => {
-	
+      case route( msg : String, key : BigInt ) => {
+	if (L_small(0) <= key && L_large( L_large.size - 1 ) >= key) {
+	  //send to leaf with closest value to key, including ourselves
+	  BigInt dist = (id - key).abs;
+	  BigInt mdist = dist;
+	  BigInt min = id;
+
+	  for (int i = 0; i < L_small.size) {
+	    dist = (L_small(i) - key).abs;
+	    if (dist < mdist) {
+	      mdist = dist;
+	      min = L_small(i);
+	    }
+	  }
+
+	  for (int i = 0; i < L_large.size) {
+	    dist = (L_small(i) - key).abs;
+	    if (dist < mdist) {
+	      mdist = dist;
+	      min = L_large(i);
+	    }
+	  }
+
+	  //min is now id of closest leaf node, possibly including this one
+	  
+	}
       }
     }
 
-    def index(i: Int, j: Int, n: Int, m: Int) {
+    def index(i: Int, j: Int) {
       //return 
+      return (i * Rn + j);
       
     }
   }
