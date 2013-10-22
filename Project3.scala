@@ -27,12 +27,20 @@ object Pastry {
 
   /**nodes*/
   class Node(id:BigInt) extends Actor {
-    var routing = ArrayBuffer[BigInt]()/**routing array*/
-    var leaf = ArrayBuffer[BigInt]()/**leaf array*/
+    var R = ArrayBuffer[BigInt]()// routing array
+    var L_small = ArrayBuffer[BigInt]()// leaf array, smaller than us
+    var L_large = ArrayBuffer[BigInt]()// leaf array, larger than us
+    var Ln : Int = 0; // the number of columns of L
+    var Lm : Int = 0; // the number of rows of L
     def receive = {
       case route( msg : string, key : BigInt ) => {
-
+	
       }
+    }
+
+    def index(i: Int, j: Int, n: Int, m: Int) {
+      //return 
+      
     }
   }
 
