@@ -24,7 +24,7 @@ object Pastry {
     var counter = 0
     var randomID:BigInt = 0
     while(counter<N){ /**make nodes*/
-      randomID = IDtoBigInt(genID(base),base)
+      randomID = genID(base)
       var nodey = system.actorOf(Props(classOf[Node],randomID), counter.toString)
       nodeArray = nodeArray += nodey
       counter += 1
@@ -43,13 +43,13 @@ object Pastry {
       case route( msg : String, key : BigInt ) => {
 	if (L_small(0).id <= key && L_large( L_large.size - 1 ).id >= key) {
 	  //send to leaf with closest value to key, including ourselves
-	  BigInt dist = (id - key).abs;
-	  BigInt mdist = dist;
-	  IdRef min = null;
+	  var dist : BigInt = (id - key).abs;
+	  var mdist : BigInt = dist;
+	  var min :IdRef = null;
 	  min.id = id;
-	  min.ref = this;
-
-	  for (int i = 0; i < L_small.size) {
+	  min.ref = self;
+	  var i : Int = 0;
+	  for (i <- 0 until L_small.size) {
 	    dist = (L_small(i).id - key).abs;
 	    if (dist < mdist) {
 	      mdist = dist;
@@ -57,7 +57,7 @@ object Pastry {
 	    }
 	  }
 
-	  for (int i = 0; i < L_large.size) {
+	  for (i <- 0 until L_large.size) {
 	    dist = (L_large(i).id - key).abs;
 	    if (dist < mdist) {
 	      mdist = dist;
@@ -73,6 +73,10 @@ object Pastry {
 	  
 	}
       }
+      case deliver( msg: String, key : BigInt ) => {
+	printf("Node %d received message: ", id );
+	println( msg );
+      }
 
       case IAmNeighbor(nrouting:ArrayBuffer[BigInt],nleaf:ArrayBuffer[BigInt]) => {
 	addRouting(nrouting)
@@ -84,15 +88,27 @@ object Pastry {
     def addLeaf(nleaf:ArrayBuffer[BigInt]) = { /**add on to leaf tables*/
     }
 
-    def index(i: Int, j: Int) {
+    def index(i: Int, j: Int) : Int = {
       //return 
       return (i * Rn + j);
+      
+    }
+    def shl( x: BigInt, y: BigInt ) : Int = {
+      var arrx : ArrayBuffer[Int] = BigInttoArr(x, 16);
+      var arry : ArrayBuffer[Int] = BigInttoArr(y, 16);
+      var i : Int = 0;
+
+      while (arrx(i) == arry(i)) {
+	if (i < 33)
+	  i += 1;
+      }
+      return i;
       
     }
   }
 
   /**generate random nodeid of length 32*/  
-  def genID(base:Int):ArrayBuffer[Int] = { 
+  def genID(base:Int): BigInt = { 
     val generator = new Random()
     var nodeID = new ArrayBuffer[Int]()
 
@@ -101,11 +117,11 @@ object Pastry {
       nodeID = nodeID += (generator.nextInt(base.toInt))
       counter += 1
     } 
-    return nodeID
+    return ArrtoBigInt(nodeID, base);
   }
 
   /**convert node id to BigInt*/
-  def IDtoBigInt(id:ArrayBuffer[Int], base:Int):BigInt = {
+  def ArrtoBigInt(id:ArrayBuffer[Int], base:Int):BigInt = {
     var myint:BigInt = 0
     var index = 0
     while(index < id.length){
@@ -117,7 +133,7 @@ object Pastry {
   }
 
   /**convert BigInt ID to sequence of length 32*/
-  def BigInttoID(id: BigInt, base:Int):ArrayBuffer[Int]={
+  def BigInttoArr(id: BigInt, base:Int):ArrayBuffer[Int]={
     var myArray = ArrayBuffer[Int]()
     var counter = 0
     var leftover = id
