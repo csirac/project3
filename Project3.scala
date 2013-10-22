@@ -5,12 +5,12 @@ import scala.math
 
 case class route( msg : String, key : BigInt )
 case class deliver( msg : String, key : BigInt )
+case class IAmNeighbor(nrouting:ArrayBuffer[BigInt],nleaf:ArrayBuffer[BigInt]) /**send node table info*/
 
 class IdRef {
   var ref : ActorRef = null;
   var id : BigInt = BigInt(-1);
 }
-
 
 object Pastry { 
 
@@ -67,6 +67,15 @@ object Pastry {
 	  
 	}
       }
+
+      case IAmNeighbor(nrouting:ArrayBuffer[BigInt],nleaf:ArrayBuffer[BigInt]) => {
+	addRouting(nrouting)
+	addLeaf(nleaf)
+      }
+    }
+    def addRouting(nrouting:ArrayBuffer[BigInt]) = { /**add on to routing table*/
+    }
+    def addLeaf(nleaf:ArrayBuffer[BigInt]) = { /**add on to leaf tables*/
     }
 
     def index(i: Int, j: Int) {
