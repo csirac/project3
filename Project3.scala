@@ -41,14 +41,16 @@ object Pastry {
     var Rm : Int = 0; // the number of rows of R
     def receive = {
       case route( msg : String, key : BigInt ) => {
-	if (L_small(0) <= key && L_large( L_large.size - 1 ) >= key) {
+	if (L_small(0).id <= key && L_large( L_large.size - 1 ).id >= key) {
 	  //send to leaf with closest value to key, including ourselves
 	  BigInt dist = (id - key).abs;
 	  BigInt mdist = dist;
-	  BigInt min = id;
+	  IdRef min = null;
+	  min.id = id;
+	  min.ref = this;
 
 	  for (int i = 0; i < L_small.size) {
-	    dist = (L_small(i) - key).abs;
+	    dist = (L_small(i).id - key).abs;
 	    if (dist < mdist) {
 	      mdist = dist;
 	      min = L_small(i);
@@ -56,14 +58,18 @@ object Pastry {
 	  }
 
 	  for (int i = 0; i < L_large.size) {
-	    dist = (L_small(i) - key).abs;
+	    dist = (L_large(i).id - key).abs;
 	    if (dist < mdist) {
 	      mdist = dist;
 	      min = L_large(i);
 	    }
 	  }
 
-	  //min is now id of closest leaf node, possibly including this one
+	  //min is now id of closest leaf node, including this one
+	  min.ref ! deliver( msg, key );
+	}
+	else {
+	  //use routing table
 	  
 	}
       }
