@@ -3,6 +3,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import scala.math
 
+case class route( msg : string, key : BigInt )
+
 object Pastry { 
 
   /**main method*/
@@ -29,8 +31,11 @@ object Pastry {
   /**nodes*/
   class Node(id:ArrayBuffer[Int]) extends Actor {
     var neighborhood = Set[ActorRef]()
+    val 
     def receive = {
-      case blah => {
+      case route( msg : string, key : BigInt ) => {
+	
+
       }
     }
   }
