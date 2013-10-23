@@ -5,7 +5,7 @@ import scala.math
 
 case class route( msg : String, key : BigInt )
 case class deliver( msg : String, key : BigInt )
-case class IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef]) /**send node table info*/
+case class IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID: IdRef) /**send node table info*/
 
 class IdRef {
   var ref : ActorRef = null;
@@ -25,7 +25,7 @@ object Pastry {
     var randomID:BigInt = 0
     while(counter<N){ /**make nodes*/
       randomID = genID(base)
-      var nodey = system.actorOf(Props(classOf[Node],randomID), counter.toString)
+      var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
       nodeArray = nodeArray += nodey
       counter += 1
     }
@@ -33,7 +33,7 @@ object Pastry {
   }
 
   /**nodes*/
-  class Node(id:BigInt) extends Actor {
+  class Node(id:BigInt,base: Int) extends Actor {
     var R = ArrayBuffer[IdRef]()// routing array
     var L_small = ArrayBuffer[IdRef]()// leaf array, smaller than us , starting with smallest
     var L_large = ArrayBuffer[IdRef]()// leaf array, larger than us , starting with smallest
@@ -120,7 +120,7 @@ object Pastry {
 	println( msg );
       }
 
-      case IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef]) => { /**neighbor gives info*/
+      case IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID:IdRef) => { /**neighbor gives info*/
       }
     }
     def addToLeafs(leafs:ArrayBuffer[IdRef]){
@@ -151,7 +151,52 @@ object Pastry {
        	i+=1
       }
     }
-  
+    def addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef)={
+      val neighborID = BigInttoArr(nID.id,base) /**find id sequences*/
+      val myID = BigInttoArr(id,base)
+      val matches = sequenceMatch(neighborID,myID)
+      var i=1 /**row of routing*/
+      var j=1 /**column of routing*/
+      while(i<=32){ /**sequences are of length 32*/
+	if(i<matches){
+	  while(j<=base){ /**base possible entries for each spot in sequence*/
+	    if((R(index(i,j)))==null){
+	      R(index(i,j))=routing(index(i,j))
+	    }
+	    j+=1
+	  }
+	}
+	else if (i>=matches){
+	  while (j<= base) {
+	    if(id!=routing(index(i,j)).id){/**make sure not the same node*/
+	      var ijArray = BigInttoArr(routing(index(i,j)).id,base)
+	      var m = sequenceMatch(myID,ijArray)
+	      if((routing(index(m,ijArray(m+1))))==null){
+		routing(index(m,ijArray(m+1))) = routing(index(i,j))
+	      }
+	    
+	    }
+	  }
+	}
+	i+=1
+      }
+    }
+    def sequenceMatch(x:ArrayBuffer[Int],y:ArrayBuffer[Int]):Int ={ /**finds how long sequences match from beginning*/
+      var i = x.length-1
+      var matches = 0
+      while((i>=0)&&(i<y.length)){
+	if(x(i)==y(i)){
+	  matches+=1
+	}
+	else{
+	 i = -2 /**doesn't match, stop searching*/
+	}
+	i += -1
+      }
+      return matches
+    }  
+    
+    
     def index(i: Int, j: Int) : Int = {
       //return 
       return (i * Rn + j);
