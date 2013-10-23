@@ -70,7 +70,8 @@ object Pastry {
 	}
 	else {
 	  //use routing table
-	  
+	  var l : Int = shl( key, id );
+	  var keyl : BigInt = key % BigInt(16)^{l + 1}
 	}
       }
       case deliver( msg: String, key : BigInt ) => {
@@ -97,10 +98,17 @@ object Pastry {
       var arrx : ArrayBuffer[Int] = BigInttoArr(x, 16);
       var arry : ArrayBuffer[Int] = BigInttoArr(y, 16);
       var i : Int = 0;
-
-      while (arrx(i) == arry(i)) {
-	if (i < 33)
+      var b : Boolean = (arrx(0) == arry(0));
+      while (b) {
+	if (i < 32) {
 	  i += 1;
+	  b = (arrx(i) == arry(i));
+	}
+	else {
+	  i += 1;
+	  b = false;
+	}
+	  
       }
       return i;
       
