@@ -5,7 +5,7 @@ import scala.math
 
 case class route( msg : String, key : BigInt )
 case class deliver( msg : String, key : BigInt )
-case class IAmNeighbor(nrouting:ArrayBuffer[BigInt],nleaf:ArrayBuffer[BigInt]) /**send node table info*/
+case class IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef]) /**send node table info*/
 
 class IdRef {
   var ref : ActorRef = null;
@@ -71,12 +71,13 @@ object Pastry {
 	else {
 	  //use routing table
 	  var l : Int = shl( key, id );
-	  var keyl : BigInt = key % BigInt(16)^{l + 1}
+	  var keyl:BigInt  = key % BigInt(16)^{l + 1}
 	  keyl /= BigInt(16)^l
+	  var keylINT = keyl.toInt
 
-	  if (R( index(l, keyl) ) != null ) {
+	  if (R( index(l, keylINT) ) != null ) {
 	    //forward to node at this place in table
-	    R( index( l, keyl ) ).ref ! route( msg, key );
+	    R( index( l, keylINT ) ).ref ! route( msg, key );
 	    
 	  }
 	  else {
@@ -119,16 +120,38 @@ object Pastry {
 	println( msg );
       }
 
-      case IAmNeighbor(nrouting:ArrayBuffer[BigInt],nleaf:ArrayBuffer[BigInt]) => {
-	addRouting(nrouting)
-	addLeaf(nleaf)
+      case IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef]) => { /**neighbor gives info*/
       }
     }
-    def addRouting(nrouting:ArrayBuffer[BigInt]) = { /**add on to routing table*/
+    def addToLeafs(leafs:ArrayBuffer[IdRef]){
+      var i = 0
+      while(i<leafs.length){/**sort each element in leafs*/
+	if((leafs(i).id<id)&&(leafs(i).id>L_small(0).id)){ /**leafs(i) should be in small leafs*/
+	  L_small(0)=leafs(i)
+	  var j = 1
+	  var temp:IdRef = null
+	  while((leafs(i).id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
+	    temp=L_small(j)
+	    L_small(j)=leafs(i)
+	    L_small(j-1)=temp
+	    j+=1
+	  }
+	}
+	else if((leafs(i).id>id)&&(leafs(i).id<L_large(L_large.length-1).id)){ /**should be in large leafs*/
+	  L_large(L_large.length-1)=leafs(i)
+	  var j = L_large.length-2
+	  var temp:IdRef = null
+	  while((leafs(i).id<L_large(j).id)&&(j>=0)){/**sort leafs(i) into L_large array*/
+	    temp=L_large(j)
+	    L_large(j)=leafs(i)
+	    L_large(j+1)=temp
+	    j += -1
+	  }
+	}
+       	i+=1
+      }
     }
-    def addLeaf(nleaf:ArrayBuffer[BigInt]) = { /**add on to leaf tables*/
-    }
-
+  
     def index(i: Int, j: Int) : Int = {
       //return 
       return (i * Rn + j);
