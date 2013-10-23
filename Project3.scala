@@ -72,6 +72,46 @@ object Pastry {
 	  //use routing table
 	  var l : Int = shl( key, id );
 	  var keyl : BigInt = key % BigInt(16)^{l + 1}
+	  keyl /= BigInt(16)^l
+
+	  if (R( index(l, keyl) ) != null ) {
+	    //forward to node at this place in table
+	    R( index( l, keyl ) ).ref ! route( msg, key );
+	    
+	  }
+	  else {
+	    //rare case
+	    //forward to a closer element in the leaf set
+	    //including this node
+	    var dist : BigInt = (id - key).abs;
+	    var mdist : BigInt = dist;
+	    var min :IdRef = null;
+	    min.id = id;
+	    min.ref = self;
+	    var i : Int = 0;
+	    for (i <- 0 until L_small.size) {
+	      dist = (L_small(i).id - key).abs;
+	      if (dist < mdist) {
+		mdist = dist;
+		min = L_small(i);
+	      }
+	    }
+
+	    for (i <- 0 until L_large.size) {
+	      dist = (L_large(i).id - key).abs;
+	      if (dist < mdist) {
+		mdist = dist;
+		min = L_large(i);
+	      }
+	    }
+
+	    //min is now id of closest leaf node, including this one
+	    if (min.ref == self) 
+	      min.ref ! deliver( msg, key );
+	    else
+	      min.ref ! route(msg, key);
+
+	  }
 	}
       }
       case deliver( msg: String, key : BigInt ) => {
