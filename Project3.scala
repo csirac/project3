@@ -6,6 +6,7 @@ import scala.math
 case class route( msg : String, key : BigInt )
 case class deliver( msg : String, key : BigInt )
 case class IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID: IdRef) /**send node table info*/
+case class table( idin : IdRef, r_in : ArrayBuffer[IdRef] )
 
 class IdRef {
   var ref : ActorRef = null;
@@ -40,8 +41,12 @@ object Pastry {
     var Rn : Int = 0; // the number of columns of R
     var Rm : Int = 0; // the number of rows of R
     def receive = {
+      case table( idin : IdRef, r_in : ArrayBuffer[IdRef] ) => {
+	
+      }
       case route( msg : String, key : IdRef ) => {
 	if (msg == "join") {
+
 	  
 	}
 	if (L_small(0).id <= key.id && L_large( L_large.size - 1 ).id >= key.id) {
