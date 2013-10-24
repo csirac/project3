@@ -40,17 +40,20 @@ object Pastry {
     var Rn : Int = 0; // the number of columns of R
     var Rm : Int = 0; // the number of rows of R
     def receive = {
-      case route( msg : String, key : BigInt ) => {
-	if (L_small(0).id <= key && L_large( L_large.size - 1 ).id >= key) {
-	  //send to leaf with closest value to key, including ourselves
-	  var dist : BigInt = (id - key).abs;
+      case route( msg : String, key : IdRef ) => {
+	if (msg == "join") {
+	  
+	}
+	if (L_small(0).id <= key.id && L_large( L_large.size - 1 ).id >= key.id) {
+	  //send to leaf with closest value to key.id, including ourselves
+	  var dist : BigInt = (id - key.id).abs;
 	  var mdist : BigInt = dist;
-	  var min :IdRef = null;
+	  var min :IdRef = new IdRef();
 	  min.id = id;
 	  min.ref = self;
 	  var i : Int = 0;
 	  for (i <- 0 until L_small.size) {
-	    dist = (L_small(i).id - key).abs;
+	    dist = (L_small(i).id - key.id).abs;
 	    if (dist < mdist) {
 	      mdist = dist;
 	      min = L_small(i);
@@ -58,7 +61,7 @@ object Pastry {
 	  }
 
 	  for (i <- 0 until L_large.size) {
-	    dist = (L_large(i).id - key).abs;
+	    dist = (L_large(i).id - key.id).abs;
 	    if (dist < mdist) {
 	      mdist = dist;
 	      min = L_large(i);
@@ -70,8 +73,8 @@ object Pastry {
 	}
 	else {
 	  //use routing table
-	  var l : Int = shl( key, id );
-	  var keyl:BigInt  = key % BigInt(16)^{l + 1}
+	  var l : Int = shl( key.id, id );
+	  var keyl:BigInt  = key.id % BigInt(16)^{l + 1}
 	  keyl /= BigInt(16)^l
 	  var keylINT = keyl.toInt
 
@@ -82,40 +85,50 @@ object Pastry {
 	  }
 	  else {
 	    //rare case
-	    //forward to a closer element in the leaf set
-	    //including this node
-	    var dist : BigInt = (id - key).abs;
+	    //forward to a closer element, matching at least
+	    //the same prefix, in the leaf set
+	    //or routing table
+	    var dist : BigInt = (id - key.id).abs;
 	    var mdist : BigInt = dist;
-	    var min :IdRef = null;
-	    min.id = id;
-	    min.ref = self;
+	    var cont : Boolean = true;
 	    var i : Int = 0;
+	    //look through routing table first
+	    for (i <- 0 until Rn) {
+	      if (cont) {
+		if (R( index( l, i ) ) != null) {
+		  if (((R( index( l, i ) )).id - key.id).abs < mdist) {
+		    cont = false;
+		    R( index( l, i ) ).ref ! route(msg, key);
+		  }
+		}
+	      }
+	    }
 	    for (i <- 0 until L_small.size) {
-	      dist = (L_small(i).id - key).abs;
-	      if (dist < mdist) {
-		mdist = dist;
-		min = L_small(i);
+	      if (cont) {
+		dist = (L_small(i).id - key.id).abs;
+		if (dist < mdist) {
+		  //must agree on at least prefix size l, other distance could not be less
+		  cont = false;
+		  L_small(i).ref ! route(msg,key)
+		}
 	      }
 	    }
 
 	    for (i <- 0 until L_large.size) {
-	      dist = (L_large(i).id - key).abs;
+	      dist = (L_large(i).id - key.id).abs;
 	      if (dist < mdist) {
-		mdist = dist;
-		min = L_large(i);
+		cont = false;
+		L_large(i).ref ! route(msg,key)
 	      }
 	    }
 
-	    //min is now id of closest leaf node, including this one
-	    if (min.ref == self) 
-	      min.ref ! deliver( msg, key );
-	    else
-	      min.ref ! route(msg, key);
+	    if (cont) //nobody is closer than us
+	      self ! deliver( msg, key );
 
 	  }
 	}
       }
-      case deliver( msg: String, key : BigInt ) => {
+      case deliver( msg: String, key : IdRef ) => {
 	printf("Node %d received message: ", id );
 	println( msg );
       }
@@ -206,11 +219,11 @@ object Pastry {
       var arrx : ArrayBuffer[Int] = BigInttoArr(x, 16);
       var arry : ArrayBuffer[Int] = BigInttoArr(y, 16);
       var i : Int = 0;
-      var b : Boolean = (arrx(0) == arry(0));
+      var b : Boolean = (arrx(31 - i) == arry(31 - i));
       while (b) {
 	if (i < 32) {
 	  i += 1;
-	  b = (arrx(i) == arry(i));
+	  b = (arrx(31 - i) == arry(31 - i));
 	}
 	else {
 	  i += 1;
