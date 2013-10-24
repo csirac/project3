@@ -154,34 +154,40 @@ object Pastry {
     def addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef)={
       val neighborID = BigInttoArr(nID.id,base) /**find id sequences*/
       val myID = BigInttoArr(id,base)
-      val matches = sequenceMatch(neighborID,myID)
-      var i=1 /**row of routing*/
-      var j=1 /**column of routing*/
-      while(i<=32){ /**sequences are of length 32*/
-	if(i<matches){
-	  while(j<=base){ /**base possible entries for each spot in sequence*/
+      val matches = sequenceMatch(neighborID,myID)/**same up to place matches-1*/
+      var i=0 /**row of routing*/
+      var j=0 /**column of routing*/
+      while(i<=32){ /**sequences are of length 32, go through each row*/
+	if(i<(matches-1)){
+	  while(j<base){ /**copy entire row*/
 	    if((R(index(i,j)))==null){
 	      R(index(i,j))=routing(index(i,j))
 	    }
 	    j+=1
 	  }
 	}
-	else if (i>=matches){
-	  while (j<= base) {
-	    if(id!=routing(index(i,j)).id){/**make sure not the same node*/
-	      var ijArray = BigInttoArr(routing(index(i,j)).id,base)
-	      var m = sequenceMatch(myID,ijArray)
-	      if((routing(index(m,ijArray(m+1))))==null){
-		routing(index(m,ijArray(m+1))) = routing(index(i,j))
-	      }
-	    
+	else if (i==(matches-1)){/**copy row, except when column equals myID(matches)*/
+	  while (j<base){
+	    if(((R(index(i,j)))==null)&&(j!=myID(matches))){
+	      R(index(i,j))=routing(index(i,j))
 	    }
+	    j+=1
 	  }
 	}
-	i+=1
+	else if (i>(matches-1)) {
+	  while((routing(index(i,j))==null)&&(j<(base-1))) {
+	   j+=1
+	  }
+	  if(R(index(matches-1,neighborID(matches)))==null){
+	    R(index(matches-1,neighborID(matches))) = routing(index(i,j))
+	    }
+	}
+        i+=1
       }
+    
     }
-    def sequenceMatch(x:ArrayBuffer[Int],y:ArrayBuffer[Int]):Int ={ /**finds how long sequences match from beginning*/
+  
+  def sequenceMatch(x:ArrayBuffer[Int],y:ArrayBuffer[Int]):Int ={ /**finds how long sequences match from beginning*/
       var i = x.length-1
       var matches = 0
       while((i>=0)&&(i<y.length)){
