@@ -3,15 +3,16 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import scala.math
 
+case class route( msg : String, key : IdRef )
+case class deliver( msg : String, key : IdRef )
+case class IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID: IdRef) /**send node table info*/
+case class inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] )
+case class initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef])
+
 class IdRef {
   var ref : ActorRef = null;
   var id : BigInt = BigInt(-1);
 }
-
-case class route( msg : String, key : IdRef )
-case class deliver( msg : String, key : IdRef )
-case class IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID: IdRef) /**send node table info*/
-case class inittable(a : IdRef, b : ArrayBuffer[IdRef] )
 
 object Pastry { 
 
@@ -37,7 +38,9 @@ object Pastry {
   class Node(id:BigInt,base: Int) extends Actor {
     var R = ArrayBuffer[IdRef]()// routing array
     var L_small = ArrayBuffer[IdRef]()// leaf array, smaller than us , starting with smallest
+    L_small=L_small.padTo(base,null)
     var L_large = ArrayBuffer[IdRef]()// leaf array, larger than us , starting with smallest
+    L_large=L_large.padTo(base,null)
     var Rn : Int = 0; // the number of columns of R
     var Rm : Int = 0; // the number of rows of R
 
@@ -163,34 +166,42 @@ object Pastry {
 
       case IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID:IdRef) => { /**neighbor gives info*/
       }
-      
+
+      case initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef]) => {
+	L_small = smallLeafs
+	L_large = bigLeafs
+	if(neighbor.id>id){
+	  addToLargeLeafs(neighbor)
+	}else{
+	  addToSmallLeafs(neighbor)
+	}
+      }
+
     }
-    def addToLeafs(leafs:ArrayBuffer[IdRef]){
-      var i = 0
-      while(i<leafs.length){/**sort each element in leafs*/
-	if((leafs(i).id<id)&&(leafs(i).id>L_small(0).id)){ /**leafs(i) should be in small leafs*/
-	  L_small(0)=leafs(i)
+    def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
+      if((leaf.id<id)&&(leaf.id>L_small(0).id)){
+	  L_small(0)=leaf
 	  var j = 1
 	  var temp:IdRef = null
-	  while((leafs(i).id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
+	  while((leaf.id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
 	    temp=L_small(j)
-	    L_small(j)=leafs(i)
+	    L_small(j)=leaf
 	    L_small(j-1)=temp
 	    j+=1
 	  }
-	}
-	else if((leafs(i).id>id)&&(leafs(i).id<L_large(L_large.length-1).id)){ /**should be in large leafs*/
-	  L_large(L_large.length-1)=leafs(i)
+      }
+    }
+    def addToLargeLeafs(leaf:IdRef){
+      if((leaf.id>id)&&(leaf.id<L_large(L_large.length-1).id)){ 
+	  L_large(L_large.length-1)=leaf
 	  var j = L_large.length-2
 	  var temp:IdRef = null
-	  while((leafs(i).id<L_large(j).id)&&(j>=0)){/**sort leafs(i) into L_large array*/
+	  while((leaf.id<L_large(j).id)&&(j>=0)){
 	    temp=L_large(j)
-	    L_large(j)=leafs(i)
+	    L_large(j)=leaf
 	    L_large(j+1)=temp
 	    j += -1
 	  }
-	}
-       	i+=1
       }
     }
     def addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef)={
