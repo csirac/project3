@@ -7,6 +7,7 @@ case class route( msg : String, key : BigInt )
 case class deliver( msg : String, key : BigInt )
 case class IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID: IdRef) /**send node table info*/
 case class table( idin : IdRef, r_in : ArrayBuffer[IdRef] )
+case class initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef])
 
 class IdRef {
   var ref : ActorRef = null;
@@ -37,7 +38,9 @@ object Pastry {
   class Node(id:BigInt,base: Int) extends Actor {
     var R = ArrayBuffer[IdRef]()// routing array
     var L_small = ArrayBuffer[IdRef]()// leaf array, smaller than us , starting with smallest
+    L_small=L_small.padTo(base,null)
     var L_large = ArrayBuffer[IdRef]()// leaf array, larger than us , starting with smallest
+    L_large=L_large.padTo(base,null)
     var Rn : Int = 0; // the number of columns of R
     var Rm : Int = 0; // the number of rows of R
     def receive = {
@@ -139,6 +142,15 @@ object Pastry {
       }
 
       case IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID:IdRef) => { /**neighbor gives info*/
+      }
+      case initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef]) => {
+	L_small = smallLeafs
+	L_large = bigLeafs
+	if(neighbor.id>id){
+	  addToLargeLeafs(neighbor)
+	}else{
+	  addToSmallLeafs(neighbor)
+	}
       }
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
