@@ -252,41 +252,51 @@ object Pastry {
       }
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
-      var j=0
-      if(L_small(0)==null){
-	j+=1
-	while((L_small(j)==null)&&(j<L_small.length)){
-	  j+=1
-	}/**j is first non null place*/
-	L_small(j-1)=leaf
+      var sort:Boolean = false
+      if(L_small.length==0){/**empty, does not need to be sorted*/ 
+	L_small += leaf
       }
-      if((leaf.id<id)&&(leaf.id>L_small(j).id)){
+      else if(L_small.length<base){ /**not full*/
+	L_small.prepend(leaf)
+	sort = true
+      }
+      else if ((L_small.length==base)&&(leaf.id>L_small(0).id)){/**full, and the leaf is in range to be added*/ 
+	L_small(0)=leaf
+	sort = true
+      }
+      if(sort){ /**needs to be sorted*/ 
+	var j = 1
 	var temp:IdRef = null
 	while((leaf.id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
 	  temp=L_small(j)
 	  L_small(j)=leaf
 	  L_small(j-1)=temp
 	  j+=1
-	}
+	}   
       }
     }
     def addToLargeLeafs(leaf:IdRef){
-      var j= L_large.length-1
-      if(L_large(L_large.length-1)==null){
-	j+= -1
-	while((L_large(j)==null)&&(j>=0)){
-	  j+= -1
-	}/**j is first non null place*/
-	L_small(j+1)=leaf
+    var sort:Boolean = false
+      if(L_large.length==0){/**empty, does not need to be sorted*/ 
+	L_large = L_large += leaf
       }
-      if((leaf.id>id)&&(leaf.id<L_large(j).id)){ 
+      else if(L_large.length<base){ /**not full*/
+	L_large= L_large += leaf
+	sort = true
+      }
+      else if ((L_large.length==base)&&(leaf.id<L_large(L_large.length).id)){/**full, and the leaf is in range to be added*/ 
+	L_large(L_large.length-1)=leaf
+	sort = true
+      }
+      if(sort){ /**needs to be sorted*/ 
+	var j = L_large.length-1
 	var temp:IdRef = null
-	while((leaf.id<L_large(j).id)&&(j>=0)){
-	  temp=L_large(j)
-	  L_large(j)=leaf
-	  L_large(j+1)=temp
-	  j += -1
-	}
+	while((leaf.id<L_large(j-1).id)&&(j>0)){/**sort leafs(i) into L_small array*/
+	  temp=L_large(j-1)
+	  L_large(j-1)=leaf
+	  L_large(j)=temp
+	  j+= -1
+	}   
       }
     }
     def addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef)={

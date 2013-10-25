@@ -94,4 +94,12 @@ exit
 compile
 >>>>>>> 3b41703455e2ac2805e04723f8fff23caca06c41
 exit
+<<<<<<< HEAD
+run
+=======
+compile
+run
+compile
+exit
+>>>>>>> 4c3c1175faa5b1b34977ea8a742b4db55249ba93
 run
