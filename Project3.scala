@@ -2,6 +2,12 @@ import akka.actor._
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import scala.math
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
+import akka.util.Timeout
+import akka.pattern.ask
 
 case class route( msg : String, key : IdRef )
 case class deliver( msg : String, key : IdRef )
@@ -9,6 +15,8 @@ case class inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] )
 case class initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef])
 case class bigLeaf(leaf:IdRef)
 case class smallLeaf(leaf:IdRef)
+case class join(node: ActorRef)
+case class ReadyQuery
 
 class IdRef {
   var ref : ActorRef = null;
@@ -18,11 +26,12 @@ class IdRef {
 
 object Pastry { 
   class Node(id:BigInt,base: Int) extends Actor {
+    var joined : Boolean = false; // whether this node has joined network
     var R = ArrayBuffer[IdRef]()// routing array
     var L_small = ArrayBuffer[IdRef]()// leaf array, smaller than us , starting with smallest
-    L_small=L_small.padTo(base,null)
+
     var L_large = ArrayBuffer[IdRef]()// leaf array, larger than us , starting with smallest
-    L_large=L_large.padTo(base,null)
+
     var Rn : Int = 0; // the number of columns of R
     var Rm : Int = 0; // the number of rows of R
     val myIdRef = new IdRef()
@@ -30,6 +39,23 @@ object Pastry {
     myIdRef.id = id
 
     def receive = {
+      case join(n) => {
+	Rn = base;
+	Rm = 32;
+	L_small=L_small.padTo(base,null)
+	L_large=L_large.padTo(base,null)
+	R = R.padTo(base * 32, null);
+
+	if (n != null) {
+	  //otherwise, we are the first node
+	  var myid : IdRef = new IdRef;
+	  myid.id = id;
+	  myid.ref = self;
+	  n ! route( "join", myid );
+	} else {
+	  joined = true;
+	}
+      }
 
       case inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] ) => {
 	var l : Int = 0;
@@ -210,12 +236,20 @@ object Pastry {
 	    L_large(j).ref ! smallLeaf(myIdRef)
 	  }
 	}
+	//the joining process is now complete
+	joined = true;
       }
       case bigLeaf(leaf:IdRef) => {
 	addToLargeLeafs(leaf)
       }
       case smallLeaf(leaf:IdRef) => {
 	addToSmallLeafs(leaf)
+      }
+      case ReadyQuery => {
+	if (joined)
+	  sender ! true
+	else
+	  sender ! false
       }
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
@@ -352,7 +386,7 @@ object Pastry {
   def main(args: Array[String]) = { 
     val b = 4 /**nodeid and keys are a sequence in base 2^b*/
     val base = math.pow(2,b).toInt
-    val N = 100   /**number of nodes*/
+    val N = 2   /**number of nodes*/
     val system = ActorSystem("PastrySystem")
     var nodeArray = ArrayBuffer[ActorRef]()
     var counter = 0
@@ -360,12 +394,29 @@ object Pastry {
     var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
       randomID = genID(base)
-
-      //      while (ids_generated.contains(
+      while (ids_generated.contains( randomID )) {
+	randomID = genID(base)
+	
+      }
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
       nodeArray = nodeArray += nodey
       counter += 1
-    }   
+    }
+    //add first node
+    nodeArray(0) ! join(null);  
+  
+    //add other nodes
+    var i : Int = 0;
+    for (i <- 1 until N) {
+      nodeArray(i) ! join(nodeArray(i -1 ));  
+      //wait for join process to complete
+      implicit val timeout = Timeout(20 seconds)
+      var isready: Boolean = false;
+      while (!isready) {
+	val future = nodeArray(i) ? ReadyQuery
+	isready =  Await.result(future.mapTo[Boolean], timeout.duration )
+      }
+    }
 
     system.shutdown
   }
