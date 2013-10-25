@@ -282,13 +282,17 @@ object Pastry {
 	sort = true
       }
       if(sort){ /**needs to be sorted*/ 
-	var j = 1
+	var j = 0
 	var temp:IdRef = null
-	while((leaf.id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
-	  temp=L_small(j)
-	  L_small(j)=leaf
-	  L_small(j-1)=temp
-	  j+=1
+	while(j<(L_small.length-2)){/**sort leafs(i) into L_small array*/
+	  j+= 1
+	  if(leaf.id<L_large(j).id){ 
+	    temp=L_large(j)
+	    L_large(j)=leaf
+	    L_large(j-1)=temp
+	  }else { 
+	    j = L_small.length
+	  }
 	}   
       }
     }
@@ -314,11 +318,15 @@ object Pastry {
       if(sort){ /**needs to be sorted*/ 
 	var j = L_large.length-1
 	var temp:IdRef = null
-	while((leaf.id<L_large(j-1).id)&&(j>0)){/**sort leafs(i) into L_small array*/
-	  temp=L_large(j-1)
-	  L_large(j-1)=leaf
-	  L_large(j)=temp
+	while(j>0){/**sort leafs(i) into L_small array*/
 	  j+= -1
+	  if(leaf.id<L_large(j).id){ 
+	  temp=L_large(j)
+	  L_large(j)=leaf
+	  L_large(j+1)=temp
+	  }else { 
+	    j = -1
+	  }
 	}   
       }
     }

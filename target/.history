@@ -114,3 +114,14 @@ run 1
 run 2
 run 3
 >>>>>>> a68d11bd8f8803a3e65dce40232bbc2842f9e345
+compile
+run
+run 10
+compile
+run 5
+compile
+run
+run 5
+compile
+run
+run 5
