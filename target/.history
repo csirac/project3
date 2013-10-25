@@ -70,6 +70,12 @@ compile
 exit
 =======
 run
+<<<<<<< HEAD
 >>>>>>> 69a807f25b462e0170e0bdad10f89000478fc6c6
+compile
+=======
+quit
+>>>>>>> b7abc5e557e137ce610b9d4b838c55406ca7d9ca
+exit
 compile
 exit

@@ -14,27 +14,8 @@ class IdRef {
   var id : BigInt = BigInt(-1);
 }
 
+
 object Pastry { 
-
-  /**main method*/
-  def main(args: Array[String]) = { 
-    val b = 4 /**nodeid and keys are a sequence in base 2^b*/
-    val base = math.pow(2,b).toInt
-    val N = 100   /**number of nodes*/
-    val system = ActorSystem("PastrySystem")
-    var nodeArray = ArrayBuffer[ActorRef]()
-    var counter = 0
-    var randomID:BigInt = 0
-    while(counter<N){ /**make nodes*/
-      randomID = genID(base)
-      var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
-      nodeArray = nodeArray += nodey
-      counter += 1
-    }
-    system.shutdown
-  }
-
-  /**nodes*/
   class Node(id:BigInt,base: Int) extends Actor {
     var R = ArrayBuffer[IdRef]()// routing array
     var L_small = ArrayBuffer[IdRef]()// leaf array, smaller than us , starting with smallest
@@ -162,6 +143,13 @@ object Pastry {
       case deliver( msg: String, key : IdRef ) => {
 	printf("Node %d received message: ", id );
 	println( msg );
+	if (msg == "join") {
+	  var Z : IdRef = new IdRef();
+	  Z.id = id;
+	  Z.ref = self;
+	  key.ref ! inittable( Z, R );
+	  key.ref ! initializeLeafs( Z , L_large , L_small)
+	}
       }
 
       case IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID:IdRef) => { /**neighbor gives info*/
@@ -179,29 +167,41 @@ object Pastry {
 
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
-      if((leaf.id<id)&&(leaf.id>L_small(0).id)){
-	  L_small(0)=leaf
-	  var j = 1
-	  var temp:IdRef = null
-	  while((leaf.id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
-	    temp=L_small(j)
-	    L_small(j)=leaf
-	    L_small(j-1)=temp
-	    j+=1
-	  }
+      var j=0
+      if(L_small(0)==null){
+	j+=1
+	while((L_small(j)==null)&&(j<L_small.length)){
+	  j+=1
+	}/**j is first non null place*/
+	L_small(j-1)=leaf
+      }
+      if((leaf.id<id)&&(leaf.id>L_small(j).id)){
+	var temp:IdRef = null
+	while((leaf.id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
+	  temp=L_small(j)
+	  L_small(j)=leaf
+	  L_small(j-1)=temp
+	  j+=1
+	}
       }
     }
     def addToLargeLeafs(leaf:IdRef){
-      if((leaf.id>id)&&(leaf.id<L_large(L_large.length-1).id)){ 
-	  L_large(L_large.length-1)=leaf
-	  var j = L_large.length-2
-	  var temp:IdRef = null
-	  while((leaf.id<L_large(j).id)&&(j>=0)){
-	    temp=L_large(j)
-	    L_large(j)=leaf
-	    L_large(j+1)=temp
-	    j += -1
-	  }
+      var j= L_large.length-1
+      if(L_large(L_large.length-1)==null){
+	j+= -1
+	while((L_large(j)==null)&&(j>=0)){
+	  j+= -1
+	}/**j is first non null place*/
+	L_small(j+1)=leaf
+      }
+      if((leaf.id>id)&&(leaf.id<L_large(j).id)){ 
+	var temp:IdRef = null
+	while((leaf.id<L_large(j).id)&&(j>=0)){
+	  temp=L_large(j)
+	  L_large(j)=leaf
+	  L_large(j+1)=temp
+	  j += -1
+	}
       }
     }
     def addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef)={
@@ -235,7 +235,8 @@ object Pastry {
 		    R(index(matches-1,neighborID(matches))) = routing(index(i,j))
 		  }
 		}
-        i+=1
+	i+=1
+	j=0
       }
       
     }
@@ -293,6 +294,23 @@ object Pastry {
 
 
 
+  /**main method*/
+  def main(args: Array[String]) = { 
+    val b = 4 /**nodeid and keys are a sequence in base 2^b*/
+    val base = math.pow(2,b).toInt
+    val N = 100   /**number of nodes*/
+    val system = ActorSystem("PastrySystem")
+    var nodeArray = ArrayBuffer[ActorRef]()
+    var counter = 0
+    var randomID:BigInt = 0
+    while(counter<N){ /**make nodes*/
+      randomID = genID(base)
+      var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
+      nodeArray = nodeArray += nodey
+      counter += 1
+    }
+    system.shutdown
+  }
 
   /**generate random nodeid of length 32*/  
   def genID(base:Int): BigInt = { 
