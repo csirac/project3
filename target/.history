@@ -63,3 +63,5 @@ exit
 run
 compile
 run
+quit
+exit
