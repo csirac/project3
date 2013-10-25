@@ -167,9 +167,15 @@ object Pastry {
 
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
-      if((leaf.id<id)&&(leaf.id>L_small(0).id)){
-	L_small(0)=leaf
-	var j = 1
+      var j=0
+      if(L_small(0)==null){
+	j+=1
+	while((L_small(j)==null)&&(j<L_small.length)){
+	  j+=1
+	}/**j is first non null place*/
+	L_small(j-1)=leaf
+      }
+      if((leaf.id<id)&&(leaf.id>L_small(j).id)){
 	var temp:IdRef = null
 	while((leaf.id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
 	  temp=L_small(j)
@@ -180,9 +186,15 @@ object Pastry {
       }
     }
     def addToLargeLeafs(leaf:IdRef){
-      if((leaf.id>id)&&(leaf.id<L_large(L_large.length-1).id)){ 
-	L_large(L_large.length-1)=leaf
-	var j = L_large.length-2
+      var j= L_large.length-1
+      if(L_large(L_large.length-1)==null){
+	j+= -1
+	while((L_large(j)==null)&&(j>=0)){
+	  j+= -1
+	}/**j is first non null place*/
+	L_small(j+1)=leaf
+      }
+      if((leaf.id>id)&&(leaf.id<L_large(j).id)){ 
 	var temp:IdRef = null
 	while((leaf.id<L_large(j).id)&&(j>=0)){
 	  temp=L_large(j)
@@ -226,6 +238,7 @@ object Pastry {
 		  }
 		}
 	i+=1
+	j=0
       }
       
     }
