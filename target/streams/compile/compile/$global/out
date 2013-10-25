@@ -17,7 +17,7 @@
 [0m[[0minfo[0m] [0mCompiling 1 Scala source to /cise/homes/kuhnle/repo/target/scala-2.10/classes...[0m
 [0m[[0mdebug[0m] [0mGetting compiler-interface from component compiler for Scala 2.10.2[0m
 [0m[[0mdebug[0m] [0mGetting compiler-interface from component compiler for Scala 2.10.2[0m
-[0m[[0mdebug[0m] [0mRunning cached compiler 7d24e167, interfacing (CompilerInterface) with Scala compiler version 2.10.2[0m
+[0m[[0mdebug[0m] [0mRunning cached compiler 19facd2f, interfacing (CompilerInterface) with Scala compiler version 2.10.2[0m
 [0m[[0mdebug[0m] [0mCalling Scala compiler with arguments  (CompilerInterface):[0m
 [0m[[0mdebug[0m] [0m	-bootclasspath[0m
 [0m[[0mdebug[0m] [0m	/usr/lib/jvm/java-7-oracle/jre/lib/resources.jar:/usr/lib/jvm/java-7-oracle/jre/lib/rt.jar:/usr/lib/jvm/java-7-oracle/jre/lib/sunrsasign.jar:/usr/lib/jvm/java-7-oracle/jre/lib/jsse.jar:/usr/lib/jvm/java-7-oracle/jre/lib/jce.jar:/usr/lib/jvm/java-7-oracle/jre/lib/charsets.jar:/usr/lib/jvm/java-7-oracle/jre/lib/jfr.jar:/usr/lib/jvm/java-7-oracle/jre/classes:/cise/homes/kuhnle/.sbt/boot/scala-2.10.2/lib/scala-library.jar[0m
@@ -26,7 +26,7 @@
 [0m[[33mwarn[0m] [0mthere were 2 deprecation warning(s); re-run with -deprecation for details[0m
 [0m[[33mwarn[0m] [0mthere were 2 feature warning(s); re-run with -feature for details[0m
 [0m[[33mwarn[0m] [0mtwo warnings found[0m
-[0m[[0mdebug[0m] [0mScala compilation took 4.14684465 s[0m
+[0m[[0mdebug[0m] [0mScala compilation took 7.911697745 s[0m
 [0m[[0mdebug[0m] [0mInvalidated by transitive public inheritance: Set()[0m
 [0m[[0mdebug[0m] [0mInvalidated by direct dependency: Set()[0m
 [0m[[0mdebug[0m] [0mNew invalidations:[0m

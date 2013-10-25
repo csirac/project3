@@ -231,7 +231,7 @@ object Pastry {
       case initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef]) => {
 
 	L_small = smallLeafs.clone;
-	L_large = smallLeafs.clone;
+	L_large = bigLeafs.clone;
 
 	if(neighbor.id>id){
 	  addToLargeLeafs(neighbor)
