@@ -28,6 +28,7 @@ object Pastry {
     def receive = {
 
       case inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] ) => {
+	
 
 	var l : Int = 0;
 	//receiving this message means this node is currently in the
@@ -37,9 +38,11 @@ object Pastry {
 	l = shl(id, idin.id);
 	// l will be the row of this node's table which will be edited
 	var i : Int = 0;
-	// need to fetch the l + 1 nth digit of this node's id
-	var j : Int = getdigit( id, l + 1 );
-
+	// need to fetch the l nth digit of this node's id ( starting at 0th digit )
+	var j : Int = getdigit( id, l );
+	var k : Int = getdigit( idin, l );
+	
+	R( index( l, k ) ) = idin;
 	for (i <- 0 until Rn) {
 	  if (i != j) {
 	    if (r_in( index(l, i) ) != null) {
@@ -305,8 +308,10 @@ object Pastry {
     var nodeArray = ArrayBuffer[ActorRef]()
     var counter = 0
     var randomID:BigInt = 0
+    var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
       randomID = genID(base)
+      while (ids_generated.contains(
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
       nodeArray = nodeArray += nodey
       counter += 1
