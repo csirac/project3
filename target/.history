@@ -62,8 +62,14 @@ compile
 exit
 run
 compile
+<<<<<<< HEAD
 exit
 compile
 exit
+compile
+exit
+=======
+run
+>>>>>>> 69a807f25b462e0170e0bdad10f89000478fc6c6
 compile
 exit

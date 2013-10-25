@@ -3,10 +3,10 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import scala.math
 
-case class route( msg : String, key : BigInt )
-case class deliver( msg : String, key : BigInt )
+case class route( msg : String, key : IdRef )
+case class deliver( msg : String, key : IdRef )
 case class IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID: IdRef) /**send node table info*/
-case class table( idin : IdRef, r_in : ArrayBuffer[IdRef] )
+case class inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] )
 case class initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef])
 
 class IdRef {
@@ -43,14 +43,37 @@ object Pastry {
     L_large=L_large.padTo(base,null)
     var Rn : Int = 0; // the number of columns of R
     var Rm : Int = 0; // the number of rows of R
+
     def receive = {
-      case table( idin : IdRef, r_in : ArrayBuffer[IdRef] ) => {
+
+      case inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] ) => {
+
+	var l : Int = 0;
+	//receiving this message means this node is currently in the
+	//process of joining the network.
+	//need to calculate how much we agree with the sender's id
+
+	l = shl(id, idin.id);
+	// l will be the row of this node's table which will be edited
+	var i : Int = 0;
+	// need to fetch the l + 1 nth digit of this node's id
+	var j : Int = getdigit( id, l + 1 );
+
+	for (i <- 0 until Rn) {
+	  if (i != j) {
+	    if (r_in( index(l, i) ) != null) {
+	      R( index(l, i )) = r_in( index(l, i));
+	    }
+	  }
+	}
 	
       }
       case route( msg : String, key : IdRef ) => {
 	if (msg == "join") {
-
-	  
+	  var myid : IdRef  = new IdRef();
+	  myid.id = id;
+	  myid.ref = self;
+	  key.ref ! inittable( myid, R );
 	}
 	if (L_small(0).id <= key.id && L_large( L_large.size - 1 ).id >= key.id) {
 	  //send to leaf with closest value to key.id, including ourselves
@@ -79,62 +102,62 @@ object Pastry {
 	  //min is now id of closest leaf node, including this one
 	  min.ref ! deliver( msg, key );
 	}
-	else {
-	  //use routing table
-	  var l : Int = shl( key.id, id );
-	  var keyl:BigInt  = key.id % BigInt(16)^{l + 1}
-	  keyl /= BigInt(16)^l
-	  var keylINT = keyl.toInt
+	    else {
+	      //use routing table
+	      var l : Int = shl( key.id, id );
+	      var keyl:BigInt  = key.id % BigInt(16)^{l + 1}
+	      keyl /= BigInt(16)^l
+	      var keylINT = keyl.toInt
 
-	  if (R( index(l, keylINT) ) != null ) {
-	    //forward to node at this place in table
-	    R( index( l, keylINT ) ).ref ! route( msg, key );
-	    
-	  }
-	  else {
-	    //rare case
-	    //forward to a closer element, matching at least
-	    //the same prefix, in the leaf set
-	    //or routing table
-	    var dist : BigInt = (id - key.id).abs;
-	    var mdist : BigInt = dist;
-	    var cont : Boolean = true;
-	    var i : Int = 0;
-	    //look through routing table first
-	    for (i <- 0 until Rn) {
-	      if (cont) {
-		if (R( index( l, i ) ) != null) {
-		  if (((R( index( l, i ) )).id - key.id).abs < mdist) {
-		    cont = false;
-		    R( index( l, i ) ).ref ! route(msg, key);
+	      if (R( index(l, keylINT) ) != null ) {
+		//forward to node at this place in table
+		R( index( l, keylINT ) ).ref ! route( msg, key );
+		
+	      }
+	      else {
+		//rare case
+		//forward to a closer element, matching at least
+		//the same prefix, in the leaf set
+		//or routing table
+		var dist : BigInt = (id - key.id).abs;
+		var mdist : BigInt = dist;
+		var cont : Boolean = true;
+		var i : Int = 0;
+		//look through routing table first
+		for (i <- 0 until Rn) {
+		  if (cont) {
+		    if (R( index( l, i ) ) != null) {
+		      if (((R( index( l, i ) )).id - key.id).abs < mdist) {
+			cont = false;
+			R( index( l, i ) ).ref ! route(msg, key);
+		      }
+		    }
 		  }
 		}
-	      }
-	    }
-	    for (i <- 0 until L_small.size) {
-	      if (cont) {
-		dist = (L_small(i).id - key.id).abs;
-		if (dist < mdist) {
-		  //must agree on at least prefix size l, other distance could not be less
-		  cont = false;
-		  L_small(i).ref ! route(msg,key)
+		for (i <- 0 until L_small.size) {
+		  if (cont) {
+		    dist = (L_small(i).id - key.id).abs;
+		    if (dist < mdist) {
+		      //must agree on at least prefix size l, other distance could not be less
+		      cont = false;
+		      L_small(i).ref ! route(msg,key)
+		    }
+		  }
 		}
+
+		for (i <- 0 until L_large.size) {
+		  dist = (L_large(i).id - key.id).abs;
+		  if (dist < mdist) {
+		    cont = false;
+		    L_large(i).ref ! route(msg,key)
+		  }
+		}
+
+		if (cont) //nobody is closer than us
+		  self ! deliver( msg, key );
+
 	      }
 	    }
-
-	    for (i <- 0 until L_large.size) {
-	      dist = (L_large(i).id - key.id).abs;
-	      if (dist < mdist) {
-		cont = false;
-		L_large(i).ref ! route(msg,key)
-	      }
-	    }
-
-	    if (cont) //nobody is closer than us
-	      self ! deliver( msg, key );
-
-	  }
-	}
       }
       case deliver( msg: String, key : IdRef ) => {
 	printf("Node %d received message: ", id );
@@ -143,6 +166,7 @@ object Pastry {
 
       case IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID:IdRef) => { /**neighbor gives info*/
       }
+
       case initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef]) => {
 	L_small = smallLeafs
 	L_large = bigLeafs
@@ -152,6 +176,7 @@ object Pastry {
 	  addToSmallLeafs(neighbor)
 	}
       }
+
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
       if((leaf.id<id)&&(leaf.id>L_small(0).id)){
@@ -194,28 +219,28 @@ object Pastry {
 	    j+=1
 	  }
 	}
-	else if (i==(matches-1)){/**copy row, except when column equals myID(matches)*/
-	  while (j<base){
-	    if(((R(index(i,j)))==null)&&(j!=myID(matches))){
-	      R(index(i,j))=routing(index(i,j))
+	    else if (i==(matches-1)){/**copy row, except when column equals myID(matches)*/
+	      while (j<base){
+		if(((R(index(i,j)))==null)&&(j!=myID(matches))){
+		  R(index(i,j))=routing(index(i,j))
+		}
+		j+=1
+	      }
 	    }
-	    j+=1
-	  }
-	}
-	else if (i>(matches-1)) {
-	  while((routing(index(i,j))==null)&&(j<(base-1))) {
-	   j+=1
-	  }
-	  if(R(index(matches-1,neighborID(matches)))==null){
-	    R(index(matches-1,neighborID(matches))) = routing(index(i,j))
-	    }
-	}
+		else if (i>(matches-1)) {
+		  while((routing(index(i,j))==null)&&(j<(base-1))) {
+		    j+=1
+		  }
+		  if(R(index(matches-1,neighborID(matches)))==null){
+		    R(index(matches-1,neighborID(matches))) = routing(index(i,j))
+		  }
+		}
         i+=1
       }
-    
+      
     }
-  
-  def sequenceMatch(x:ArrayBuffer[Int],y:ArrayBuffer[Int]):Int ={ /**finds how long sequences match from beginning*/
+    
+    def sequenceMatch(x:ArrayBuffer[Int],y:ArrayBuffer[Int]):Int ={ /**finds how long sequences match from beginning*/
       var i = x.length-1
       var matches = 0
       while((i>=0)&&(i<y.length)){
@@ -223,7 +248,7 @@ object Pastry {
 	  matches+=1
 	}
 	else{
-	 i = -2 /**doesn't match, stop searching*/
+	  i = -2 /**doesn't match, stop searching*/
 	}
 	i += -1
       }
@@ -250,12 +275,24 @@ object Pastry {
 	  i += 1;
 	  b = false;
 	}
-	  
+	
       }
       return i;
       
     }
+
+    def getdigit(m: BigInt, l: Int) : Int = {
+      var tmp : BigInt  = m % BigInt(16)^{l + 1}
+      tmp /= BigInt(16)^l
+      val r : Int = tmp.toInt
+      
+      return r;
+    }
+
   }
+
+
+
 
   /**generate random nodeid of length 32*/  
   def genID(base:Int): BigInt = { 
@@ -295,5 +332,5 @@ object Pastry {
     }
     return myArray
   }
-}
 
+}
