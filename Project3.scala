@@ -219,8 +219,10 @@ object Pastry {
 		  while((routing(index(i,j))==null)&&(j<(base-1))) {
 		    j+=1
 		  }
+		  
 		  if(R(index(matches-1,neighborID(matches)))==null){
-		    R(index(matches-1,neighborID(matches))) = routing(index(i,j))
+		    if (j != base)
+		      R(index(matches-1,neighborID(matches))) = routing(index(i,j))
 		  }
 		}
 	i+=1
