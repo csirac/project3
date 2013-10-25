@@ -199,12 +199,16 @@ object Pastry {
 	  addToSmallLeafs(neighbor)
 	}
 	var i = 0
-	for(i <- 0 to L_small.length){
-	  L_small(i).ref ! bigLeaf(myIdRef)
+	for(i <- 0 until L_small.length){
+	  if(L_small(i)!=null){
+	    L_small(i).ref ! bigLeaf(myIdRef)
+	  }
 	}
 	var j = 0
-	for(j <- 0 to L_large.length){
-	  L_large(j).ref ! smallLeaf(myIdRef)
+	for(j <- 0 until L_large.length){
+	  if(L_large(j)!=null){
+	    L_large(j).ref ! smallLeaf(myIdRef)
+	  }
 	}
       }
       case bigLeaf(leaf:IdRef) => {
