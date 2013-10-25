@@ -17,6 +17,7 @@ case class bigLeaf(leaf:IdRef)
 case class smallLeaf(leaf:IdRef)
 case class join(node: ActorRef)
 case class ReadyQuery
+case class printstate
 
 class IdRef {
   var ref : ActorRef = null;
@@ -79,13 +80,14 @@ object Pastry {
 	
       }
       case route( msg : String, key : IdRef ) => {
+	printf("Node %d received (%s, %d)\n", id, msg, key.id);
 	if (msg == "join") {
 	  var myid : IdRef  = new IdRef();
 	  myid.id = id;
 	  myid.ref = self;
 	  key.ref ! inittable( myid, R );
 	}
-
+	
 	var b2 : Boolean = false;
 	// var smallindex = 0;
 	// var largeindex = base - 1;
@@ -250,6 +252,21 @@ object Pastry {
 	else
 	  sender ! false
       }
+      case printstate => {
+	printf("Node %d\n", id);
+	print("L_small:\n")
+	var i : Int = 0;
+	for (i <- 0 until L_small.size)
+	  println(L_small(i).id)
+
+	print("L_large:\n")
+	for (i <- 0 until L_large.size)
+	  println(L_large(i).id)
+
+
+	sender ! true
+	
+      }
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
       var sort:Boolean = false
@@ -280,14 +297,20 @@ object Pastry {
       if(L_large.length==0){/**empty, does not need to be sorted*/ 
 	L_large = L_large += leaf
       }
-      else if(L_large.length<base){ /**not full*/
-	L_large= L_large += leaf
-	sort = true
+      else {
+	if(L_large.length<base){ /**not full*/
+	  L_large= L_large += leaf
+	  sort = true
+	}
+	else {
+
+	  if ((L_large.length==base)&&(leaf.id<L_large(L_large.length).id)){/**full, and the leaf is in range to be added*/ 
+	    L_large(L_large.length-1)=leaf
+	    sort = true
+	  }
+	}
       }
-      else if ((L_large.length==base)&&(leaf.id<L_large(L_large.length).id)){/**full, and the leaf is in range to be added*/ 
-	L_large(L_large.length-1)=leaf
-	sort = true
-      }
+
       if(sort){ /**needs to be sorted*/ 
 	var j = L_large.length-1
 	var temp:IdRef = null
@@ -395,7 +418,7 @@ object Pastry {
   def main(args: Array[String]) = { 
     val b = 4 /**nodeid and keys are a sequence in base 2^b*/
     val base = math.pow(2,b).toInt
-    val N = 2   /**number of nodes*/
+    val N : Int = args(0).toInt  /**number of nodes*/
     val system = ActorSystem("PastrySystem")
     var nodeArray = ArrayBuffer[ActorRef]()
     var counter = 0
@@ -425,6 +448,15 @@ object Pastry {
 	val future = nodeArray(i) ? ReadyQuery
 	isready =  Await.result(future.mapTo[Boolean], timeout.duration )
       }
+    }
+
+    //now let's print the system
+    for (i <- 0 until N) {
+      implicit val timeout = Timeout(20 seconds)
+      var isready: Boolean = false;
+      val future = nodeArray(i) ? printstate
+      println();
+      isready =  Await.result(future.mapTo[Boolean], timeout.duration )
     }
 
     system.shutdown
@@ -465,8 +497,8 @@ object Pastry {
       myArray = myArray += (leftover.mod(bbase)).toInt
       leftover = leftover/(bbase)
       counter += 1
-    }
+      }
     return myArray
-  }
+    }
 
 }

@@ -103,3 +103,9 @@ compile
 exit
 >>>>>>> 4c3c1175faa5b1b34977ea8a742b4db55249ba93
 run
+'
+run
+run 3
+run 1
+run 2
+run 3
