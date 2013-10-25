@@ -28,8 +28,6 @@ object Pastry {
     def receive = {
 
       case inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] ) => {
-	
-
 	var l : Int = 0;
 	//receiving this message means this node is currently in the
 	//process of joining the network.
@@ -40,7 +38,7 @@ object Pastry {
 	var i : Int = 0;
 	// need to fetch the l nth digit of this node's id ( starting at 0th digit )
 	var j : Int = getdigit( id, l );
-	var k : Int = getdigit( idin, l );
+	var k : Int = getdigit( idin.id, l );
 	
 	R( index( l, k ) ) = idin;
 	for (i <- 0 until Rn) {
@@ -59,7 +57,39 @@ object Pastry {
 	  myid.ref = self;
 	  key.ref ! inittable( myid, R );
 	}
-	if (L_small(0).id <= key.id && L_large( L_large.size - 1 ).id >= key.id) {
+	var smallindex = 0;
+	var largeindex = base - 1;
+	var b2 : Boolean = (L_small(0) == null);
+	while (b2) {
+	  smallindex += 1;
+	  if (smallindex < base)
+	    b2 = (L_small(smallindex) == null)
+	  else
+	    b2 = false;
+	}
+
+	b2 = (L_small(largeindex) == null);
+	while (b2) {
+	  largeindex -= 1;
+	  if ( largeindex > -1 ) {
+	    b2 = (L_small(largeindex) == null)
+	  }
+	  else {
+	    b2 = false
+	  }
+	}
+	
+	if (largeindex == -1)
+	  b2 = false;
+	else {
+	  if (smallindex == base) {
+	    b2 = false;
+	  }
+	  else {
+	    b2 = (L_small(smallindex).id <= key.id && L_large( largeindex ).id >= key.id);
+	  }
+	}
+	if (b2) {
 	  //send to leaf with closest value to key.id, including ourselves
 	  var dist : BigInt = (id - key.id).abs;
 	  var mdist : BigInt = dist;
@@ -119,7 +149,7 @@ object Pastry {
 		  }
 		}
 		for (i <- 0 until L_small.size) {
-		  if (cont) {
+		  if (cont && (L_small(i) != null)) {
 		    dist = (L_small(i).id - key.id).abs;
 		    if (dist < mdist) {
 		      //must agree on at least prefix size l, other distance could not be less
@@ -130,10 +160,12 @@ object Pastry {
 		}
 
 		for (i <- 0 until L_large.size) {
-		  dist = (L_large(i).id - key.id).abs;
-		  if (dist < mdist) {
-		    cont = false;
-		    L_large(i).ref ! route(msg,key)
+		  if (cont && L_large(i) != null) {
+		    dist = (L_large(i).id - key.id).abs;
+		    if (dist < mdist) {
+		      cont = false;
+		      L_large(i).ref ! route(msg,key)
+		    }
 		  }
 		}
 
@@ -311,11 +343,11 @@ object Pastry {
     var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
       randomID = genID(base)
-      while (ids_generated.contains(
+      //      while (ids_generated.contains(
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
       nodeArray = nodeArray += nodey
       counter += 1
-    }
+    }   
     system.shutdown
   }
 
