@@ -35,9 +35,6 @@ object Pastry {
 
     var Rn : Int = 0; // the number of columns of R
     var Rm : Int = 0; // the number of rows of R
-    val myIdRef = new IdRef()
-    myIdRef.ref = self
-    myIdRef.id = id
 
     def receive = {
       case join(n) => {
@@ -57,6 +54,7 @@ object Pastry {
       }
 
       case inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] ) => {
+	println("Receiving table")
 	var l : Int = 0;
 	//receiving this message means this node is currently in the
 	//process of joining the network.
@@ -78,6 +76,7 @@ object Pastry {
 	  }
 	}
 	
+	println("table updated")
       }
       case route( msg : String, key : IdRef ) => {
 	printf("Node %d received (%s, %d)\n", id, msg, key.id);
@@ -110,11 +109,16 @@ object Pastry {
 	//   }
 	// }
 	
-	if (L_large.isEmpty)
-	  b2 = false;
+	if (L_large.isEmpty) {
+	  if (L_small.isEmpty) {
+	    b2 = true; //there are no other nodes in the network
+	  } else {
+	    b2 = (L_small(0).id <= key.id);
+	  }
+	} 
 	else {
 	  if (L_small.isEmpty) {
-	    b2 = false;
+	    b2 = (L_large( L_large.size - 1).id >= key.id );
 	  }
 	  else {
 	    b2 = (L_small(0).id <= key.id && L_large( L_large.size - 1 ).id >= key.id);
@@ -145,6 +149,7 @@ object Pastry {
 	  }
 
 	  //min is now id of closest leaf node, including this one
+	  println("Delivering to leaf node");
 	  min.ref ! deliver( msg, key );
 	}
 	    else {
@@ -156,6 +161,7 @@ object Pastry {
 
 	      if (R( index(l, keylINT) ) != null ) {
 		//forward to node at this place in table
+		printf("Forwarding to (l, k)'th entry in routing table\n");
 		R( index( l, keylINT ) ).ref ! route( msg, key );
 		
 	      }
@@ -169,22 +175,23 @@ object Pastry {
 		var cont : Boolean = true;
 		var i : Int = 0;
 		//look through routing table first
-		for (i <- 0 until Rn) {
-		  if (cont) {
-		    if (R( index( l, i ) ) != null) {
-		      if (((R( index( l, i ) )).id - key.id).abs < mdist) {
-			cont = false;
-			R( index( l, i ) ).ref ! route(msg, key);
-		      }
-		    }
-		  }
-		}
+		// for (i <- 0 until Rn) {
+		//   if (cont) {
+		//     if (R( index( l, i ) ) != null) {
+		//       if (((R( index( l, i ) )).id - key.id).abs < mdist) {
+		// 	cont = false;
+		// 	R( index( l, i ) ).ref ! route(msg, key);
+		//       }
+		//     }
+		//   }
+		// }
 		for (i <- 0 until L_small.size) {
 		  if (cont && (L_small(i) != null)) {
 		    dist = (L_small(i).id - key.id).abs;
 		    if (dist < mdist) {
 		      //must agree on at least prefix size l, other distance could not be less
 		      cont = false;
+		      println("Forwarding to leaf node")
 		      L_small(i).ref ! route(msg,key)
 		    }
 		  }
@@ -195,13 +202,16 @@ object Pastry {
 		    dist = (L_large(i).id - key.id).abs;
 		    if (dist < mdist) {
 		      cont = false;
+		      println("Forwarding to leaf node")
 		      L_large(i).ref ! route(msg,key)
 		    }
 		  }
 		}
 
-		if (cont) //nobody is closer than us
+		if (cont) {//nobody is closer than us
+		  println("Delivering to self")
 		  self ! deliver( msg, key );
+		}
 
 	      }
 	    }
@@ -210,6 +220,7 @@ object Pastry {
 	printf("Node %d received message: ", id );
 	println( msg );
 	if (msg == "join") {
+	  println("Sending state...")
 	  var Z : IdRef = new IdRef();
 	  Z.id = id;
 	  Z.ref = self;
@@ -218,26 +229,31 @@ object Pastry {
 	}
       }
       case initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef]) => {
-	L_small = smallLeafs
-	L_large = bigLeafs
+
+	L_small = smallLeafs.clone;
+	L_large = smallLeafs.clone;
+
 	if(neighbor.id>id){
 	  addToLargeLeafs(neighbor)
 	}else{
 	  addToSmallLeafs(neighbor)
 	}
+
+	val myIdRef = new IdRef()
+	myIdRef.ref = self
+	myIdRef.id = id
+
 	var i = 0
 	for(i <- 0 until L_small.length){
-	  if(L_small(i)!=null){
 	    L_small(i).ref ! bigLeaf(myIdRef)
-	  }
 	}
 	var j = 0
 	for(j <- 0 until L_large.length){
-	  if(L_large(j)!=null){
 	    L_large(j).ref ! smallLeaf(myIdRef)
-	  }
 	}
+
 	//the joining process is now complete
+	printf("Node %d succesfully joins network\n", id);
 	joined = true;
       }
       case bigLeaf(leaf:IdRef) => {
@@ -269,58 +285,102 @@ object Pastry {
       }
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
-      var sort:Boolean = false
-      if(L_small.length==0){/**empty, does not need to be sorted*/ 
-	L_small += leaf
+      var i : Int = 0;
+      //add leaf
+      L_small.prepend( leaf );
+      //find correct spot
+      while (i < L_small.size - 1) {
+	if (L_small(i).id > L_small(i + 1).id) {
+	  //swap them
+	  var tmp = L_small(i)
+	  L_small(i) = L_small(i + 1)
+	  L_small(i + 1) = tmp
+
+	}
+	i += 1;
       }
-      else if(L_small.length<base){ /**not full*/
-	L_small.prepend(leaf)
-	sort = true
+
+      if (L_small.size > base) {
+	//too many leafs
+	//delete smallest
+	L_small = L_small.drop(1);
       }
-      else if ((L_small.length==base)&&(leaf.id>L_small(0).id)){/**full, and the leaf is in range to be added*/ 
-	L_small(0)=leaf
-	sort = true
-      }
-      if(sort){ /**needs to be sorted*/ 
-	var j = 1
-	var temp:IdRef = null
-	while((leaf.id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
-	  temp=L_small(j)
-	  L_small(j)=leaf
-	  L_small(j-1)=temp
-	  j+=1
-	}   
-      }
+	
+	
+      
+      // var sort:Boolean = false
+      // if(L_small.length==0){/**empty, does not need to be sorted*/ 
+      // 	L_small += leaf
+      // }
+      // else if(L_small.length<base){ /**not full*/
+      // 	L_small.prepend(leaf)
+      // 	sort = true
+      // }
+      // else if ((L_small.length==base)&&(leaf.id>L_small(0).id)){/**full, and the leaf is in range to be added*/ 
+      // 	L_small(0)=leaf
+      // 	sort = true
+      // }
+      // if(sort){ /**needs to be sorted*/ 
+      // 	var j = 1
+      // 	var temp:IdRef = null
+      // 	while((leaf.id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
+      // 	  temp=L_small(j)
+      // 	  L_small(j)=leaf
+      // 	  L_small(j-1)=temp
+      // 	  j+=1
+      // 	}   
+      // }
     }
     def addToLargeLeafs(leaf:IdRef){
-    var sort:Boolean = false
-      if(L_large.length==0){/**empty, does not need to be sorted*/ 
-	L_large = L_large += leaf
-      }
-      else {
-	if(L_large.length<base){ /**not full*/
-	  L_large= L_large += leaf
-	  sort = true
+      var i : Int = 0;
+      //add leaf
+      L_large.prepend( leaf );
+      //find correct spot
+      while (i < L_large.size - 1) {
+	if (L_large(i).id > L_large(i + 1).id) {
+	  //swap them
+	  var tmp = L_large(i)
+	  L_large(i) = L_large(i + 1)
+	  L_large(i + 1) = tmp
+	  
 	}
-	else {
+	i += 1;
 
-	  if ((L_large.length==base)&&(leaf.id<L_large(L_large.length).id)){/**full, and the leaf is in range to be added*/ 
-	    L_large(L_large.length-1)=leaf
-	    sort = true
-	  }
-	}
       }
 
-      if(sort){ /**needs to be sorted*/ 
-	var j = L_large.length-1
-	var temp:IdRef = null
-	while((leaf.id<L_large(j-1).id)&&(j>0)){/**sort leafs(i) into L_small array*/
-	  temp=L_large(j-1)
-	  L_large(j-1)=leaf
-	  L_large(j)=temp
-	  j+= -1
-	}   
+      if (L_large.size > base) {
+	//too many leafs
+	//delete largest
+	L_large = L_large.dropRight(1);
       }
+    // var sort:Boolean = false
+    //   if(L_large.length==0){/**empty, does not need to be sorted*/ 
+    // 	L_large = L_large += leaf
+    //   }
+    //   else {
+    // 	if(L_large.length<base){ /**not full*/
+    // 	  L_large= L_large += leaf
+    // 	  sort = true
+    // 	}
+    // 	else {
+
+    // 	  if ((L_large.length==base)&&(leaf.id<L_large(L_large.length).id)){/**full, and the leaf is in range to be added*/ 
+    // 	    L_large(L_large.length-1)=leaf
+    // 	    sort = true
+    // 	  }
+    // 	}
+    //   }
+
+    //   if(sort){ /**needs to be sorted*/ 
+    // 	var j = L_large.length-1
+    // 	var temp:IdRef = null
+    // 	while((leaf.id<L_large(j-1).id)&&(j>0)){/**sort leafs(i) into L_small array*/
+    // 	  temp=L_large(j-1)
+    // 	  L_large(j-1)=leaf
+    // 	  L_large(j)=temp
+    // 	  j+= -1
+    // 	}   
+    //   }
     }
     def addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef)={
       val neighborID = BigInttoArr(nID.id,base) /**find id sequences*/
@@ -449,6 +509,8 @@ object Pastry {
 	isready =  Await.result(future.mapTo[Boolean], timeout.duration )
       }
     }
+
+    println("Done with setup.")
 
     //now let's print the system
     for (i <- 0 until N) {
