@@ -42,8 +42,6 @@ object Pastry {
       case join(n) => {
 	Rn = base;
 	Rm = 32;
-	L_small=L_small.padTo(base,null)
-	L_large=L_large.padTo(base,null)
 	R = R.padTo(base * 32, null);
 
 	if (n != null) {
@@ -87,36 +85,37 @@ object Pastry {
 	  myid.ref = self;
 	  key.ref ! inittable( myid, R );
 	}
-	var smallindex = 0;
-	var largeindex = base - 1;
-	var b2 : Boolean = (L_small(0) == null);
-	while (b2) {
-	  smallindex += 1;
-	  if (smallindex < base)
-	    b2 = (L_small(smallindex) == null)
-	  else
-	    b2 = false;
-	}
 
-	b2 = (L_small(largeindex) == null);
-	while (b2) {
-	  largeindex -= 1;
-	  if ( largeindex > -1 ) {
-	    b2 = (L_small(largeindex) == null)
-	  }
-	  else {
-	    b2 = false
-	  }
-	}
+	var b2 : Boolean = false;
+	// var smallindex = 0;
+	// var largeindex = base - 1;
+	// while (b2) {
+	//   smallindex += 1;
+	//   if (smallindex < base)
+	//     b2 = (L_small(smallindex) == null)
+	//   else
+	//     b2 = false;
+	// }
+
+	// b2 = (L_small(largeindex) == null);
+	// while (b2) {
+	//   largeindex -= 1;
+	//   if ( largeindex > -1 ) {
+	//     b2 = (L_small(largeindex) == null)
+	//   }
+	//   else {
+	//     b2 = false
+	//   }
+	// }
 	
-	if (largeindex == -1)
+	if (L_large.isEmpty)
 	  b2 = false;
 	else {
-	  if (smallindex == base) {
+	  if (L_small.isEmpty) {
 	    b2 = false;
 	  }
 	  else {
-	    b2 = (L_small(smallindex).id <= key.id && L_large( largeindex ).id >= key.id);
+	    b2 = (L_small(0).id <= key.id && L_large( L_large.size - 1 ).id >= key.id);
 	  }
 	}
 	if (b2) {
