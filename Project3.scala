@@ -5,9 +5,10 @@ import scala.math
 
 case class route( msg : String, key : IdRef )
 case class deliver( msg : String, key : IdRef )
-case class IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID: IdRef) /**send node table info*/
 case class inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] )
 case class initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef])
+case class bigLeaf(leaf:IdRef)
+case class smallLeaf(leaf:IdRef)
 
 class IdRef {
   var ref : ActorRef = null;
@@ -24,6 +25,9 @@ object Pastry {
     L_large=L_large.padTo(base,null)
     var Rn : Int = 0; // the number of columns of R
     var Rm : Int = 0; // the number of rows of R
+    val myIdRef = new IdRef()
+    myIdRef.ref = self
+    myIdRef.id = id
 
     def receive = {
 
@@ -186,10 +190,6 @@ object Pastry {
 	  key.ref ! initializeLeafs( Z , L_large , L_small)
 	}
       }
-
-      case IAmNeighbor(nrouting:ArrayBuffer[IdRef],nL_small:ArrayBuffer[IdRef],nL_large:ArrayBuffer[IdRef],nID:IdRef) => { /**neighbor gives info*/
-      }
-
       case initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef]) => {
 	L_small = smallLeafs
 	L_large = bigLeafs
@@ -198,8 +198,21 @@ object Pastry {
 	}else{
 	  addToSmallLeafs(neighbor)
 	}
+	var i = 0
+	for(i <- 0 to L_small.length){
+	  L_small(i).ref ! bigLeaf(myIdRef)
+	}
+	var j = 0
+	for(j <- 0 to L_large.length){
+	  L_large(j).ref ! smallLeaf(myIdRef)
+	}
       }
-
+      case bigLeaf(leaf:IdRef) => {
+	addToLargeLeafs(leaf)
+      }
+      case smallLeaf(leaf:IdRef) => {
+	addToSmallLeafs(leaf)
+      }
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
       var j=0
@@ -246,7 +259,7 @@ object Pastry {
       var i=0 /**row of routing*/
       var j=0 /**column of routing*/
       while(i<=32){ /**sequences are of length 32, go through each row*/
-	if(i<(matches-1)){
+	if(i<matches){
 	  while(j<base){ /**copy entire row*/
 	    if((R(index(i,j)))==null){
 	      R(index(i,j))=routing(index(i,j))
@@ -254,7 +267,7 @@ object Pastry {
 	    j+=1
 	  }
 	}
-	    else if (i==(matches-1)){/**copy row, except when column equals myID(matches)*/
+	    else if (i==matches){/**copy row, except when column equals myID(matches)*/
 	      while (j<base){
 		if(((R(index(i,j)))==null)&&(j!=myID(matches))){
 		  R(index(i,j))=routing(index(i,j))
@@ -262,14 +275,14 @@ object Pastry {
 		j+=1
 	      }
 	    }
-		else if (i>(matches-1)) {
+		else if (i>matches) {
 		  while((routing(index(i,j))==null)&&(j<(base-1))) {
 		    j+=1
 		  }
 		  
-		  if(R(index(matches-1,neighborID(matches)))==null){
+		  if(R(index(matches,neighborID(matches)))==null){
 		    if (j != base)
-		      R(index(matches-1,neighborID(matches))) = routing(index(i,j))
+		      R(index(matches,neighborID(matches))) = routing(index(i,j))
 		  }
 		}
 	i+=1
@@ -343,11 +356,13 @@ object Pastry {
     var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
       randomID = genID(base)
+
       //      while (ids_generated.contains(
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
       nodeArray = nodeArray += nodey
       counter += 1
     }   
+
     system.shutdown
   }
 

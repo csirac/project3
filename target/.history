@@ -82,4 +82,9 @@ exit
 run
 exot
 exit
+<<<<<<< HEAD
 run
+=======
+compile
+exit
+>>>>>>> 6883ff64c461aa1db1b89b81f89bb6ee67e21261
