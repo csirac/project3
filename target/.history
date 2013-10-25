@@ -56,5 +56,41 @@ exit
 compile
 run
 exit
+<<<<<<< HEAD
 run
+=======
+compile
+exit
+compile
+exit
+run
+compile
+<<<<<<< HEAD
+exit
+compile
+exit
+compile
+exit
+=======
+run
+<<<<<<< HEAD
+>>>>>>> 69a807f25b462e0170e0bdad10f89000478fc6c6
+compile
+=======
+quit
+>>>>>>> b7abc5e557e137ce610b9d4b838c55406ca7d9ca
+exit
+compile
+exit
+run
+exot
+exit
+<<<<<<< HEAD
+run
+=======
+compile
+exit
+>>>>>>> 6883ff64c461aa1db1b89b81f89bb6ee67e21261
+compile
+>>>>>>> 3b41703455e2ac2805e04723f8fff23caca06c41
 exit
