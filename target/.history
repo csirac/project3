@@ -56,6 +56,9 @@ exit
 compile
 run
 exit
+<<<<<<< HEAD
+run
+=======
 compile
 exit
 compile
@@ -83,3 +86,67 @@ run
 exot
 exit
 run
+<<<<<<< HEAD
+=======
+=======
+compile
+exit
+>>>>>>> 6883ff64c461aa1db1b89b81f89bb6ee67e21261
+compile
+>>>>>>> 3b41703455e2ac2805e04723f8fff23caca06c41
+exit
+<<<<<<< HEAD
+run
+=======
+compile
+run
+compile
+exit
+<<<<<<< HEAD
+compile
+run
+=======
+>>>>>>> 4c3c1175faa5b1b34977ea8a742b4db55249ba93
+run
+'
+run
+run 3
+run 1
+run 2
+run 3
+<<<<<<< HEAD
+run
+run 2
+run 3
+run 2
+run 3
+run 5
+run 3
+run 2
+run 3
+run 3 
+run 3
+exit
+=======
+>>>>>>> a68d11bd8f8803a3e65dce40232bbc2842f9e345
+compile
+run
+run 10
+compile
+run 5
+compile
+run
+run 5
+compile
+run
+run 5
+>>>>>>> 4777858cc274baf7894329c65100a3518317547b
+run 3
+exit
+run 3
+exit
+run 3
+>>>>>>> eb5a2f850b38497b54840d64582ee655ba8c65a5
+run 3
+quit
+exit

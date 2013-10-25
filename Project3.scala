@@ -2,6 +2,12 @@ import akka.actor._
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import scala.math
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
+import akka.util.Timeout
+import akka.pattern.ask
 
 case class route( msg : String, key : IdRef )
 case class deliver( msg : String, key : IdRef )
@@ -9,6 +15,9 @@ case class inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] )
 case class initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef])
 case class bigLeaf(leaf:IdRef)
 case class smallLeaf(leaf:IdRef)
+case class join(node: ActorRef)
+case class ReadyQuery
+case class printstate
 
 class IdRef {
   var ref : ActorRef = null;
@@ -18,20 +27,34 @@ class IdRef {
 
 object Pastry { 
   class Node(id:BigInt,base: Int) extends Actor {
+    var joined : Boolean = false; // whether this node has joined network
     var R = ArrayBuffer[IdRef]()// routing array
     var L_small = ArrayBuffer[IdRef]()// leaf array, smaller than us , starting with smallest
-    L_small=L_small.padTo(base,null)
+
     var L_large = ArrayBuffer[IdRef]()// leaf array, larger than us , starting with smallest
-    L_large=L_large.padTo(base,null)
+
     var Rn : Int = 0; // the number of columns of R
     var Rm : Int = 0; // the number of rows of R
-    val myIdRef = new IdRef()
-    myIdRef.ref = self
-    myIdRef.id = id
 
     def receive = {
+      case join(n) => {
+	Rn = base;
+	Rm = 32;
+	R = R.padTo(base * 32, null);
+
+	if (n != null) {
+	  //otherwise, we are the first node
+	  var myid : IdRef = new IdRef;
+	  myid.id = id;
+	  myid.ref = self;
+	  n ! route( "join", myid );
+	} else {
+	  joined = true;
+	}
+      }
 
       case inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] ) => {
+	println("Receiving table")
 	var l : Int = 0;
 	//receiving this message means this node is currently in the
 	//process of joining the network.
@@ -53,44 +76,52 @@ object Pastry {
 	  }
 	}
 	
+	println("table updated")
       }
       case route( msg : String, key : IdRef ) => {
+	printf("Node %d received (%s, %d)\n", id, msg, key.id);
 	if (msg == "join") {
 	  var myid : IdRef  = new IdRef();
 	  myid.id = id;
 	  myid.ref = self;
 	  key.ref ! inittable( myid, R );
 	}
-	var smallindex = 0;
-	var largeindex = base - 1;
-	var b2 : Boolean = (L_small(0) == null);
-	while (b2) {
-	  smallindex += 1;
-	  if (smallindex < base)
-	    b2 = (L_small(smallindex) == null)
-	  else
-	    b2 = false;
-	}
-
-	b2 = (L_small(largeindex) == null);
-	while (b2) {
-	  largeindex -= 1;
-	  if ( largeindex > -1 ) {
-	    b2 = (L_small(largeindex) == null)
-	  }
-	  else {
-	    b2 = false
-	  }
-	}
 	
-	if (largeindex == -1)
-	  b2 = false;
+	var b2 : Boolean = false;
+	// var smallindex = 0;
+	// var largeindex = base - 1;
+	// while (b2) {
+	//   smallindex += 1;
+	//   if (smallindex < base)
+	//     b2 = (L_small(smallindex) == null)
+	//   else
+	//     b2 = false;
+	// }
+
+	// b2 = (L_small(largeindex) == null);
+	// while (b2) {
+	//   largeindex -= 1;
+	//   if ( largeindex > -1 ) {
+	//     b2 = (L_small(largeindex) == null)
+	//   }
+	//   else {
+	//     b2 = false
+	//   }
+	// }
+	
+	if (L_large.isEmpty) {
+	  if (L_small.isEmpty) {
+	    b2 = true; //there are no other nodes in the network
+	  } else {
+	    b2 = (L_small(0).id <= key.id);
+	  }
+	} 
 	else {
-	  if (smallindex == base) {
-	    b2 = false;
+	  if (L_small.isEmpty) {
+	    b2 = (L_large( L_large.size - 1).id >= key.id );
 	  }
 	  else {
-	    b2 = (L_small(smallindex).id <= key.id && L_large( largeindex ).id >= key.id);
+	    b2 = (L_small(0).id <= key.id && L_large( L_large.size - 1 ).id >= key.id);
 	  }
 	}
 	if (b2) {
@@ -118,6 +149,7 @@ object Pastry {
 	  }
 
 	  //min is now id of closest leaf node, including this one
+	  println("Delivering to leaf node");
 	  min.ref ! deliver( msg, key );
 	}
 	    else {
@@ -129,6 +161,7 @@ object Pastry {
 
 	      if (R( index(l, keylINT) ) != null ) {
 		//forward to node at this place in table
+		printf("Forwarding to (l, k)'th entry in routing table\n");
 		R( index( l, keylINT ) ).ref ! route( msg, key );
 		
 	      }
@@ -142,22 +175,23 @@ object Pastry {
 		var cont : Boolean = true;
 		var i : Int = 0;
 		//look through routing table first
-		for (i <- 0 until Rn) {
-		  if (cont) {
-		    if (R( index( l, i ) ) != null) {
-		      if (((R( index( l, i ) )).id - key.id).abs < mdist) {
-			cont = false;
-			R( index( l, i ) ).ref ! route(msg, key);
-		      }
-		    }
-		  }
-		}
+		// for (i <- 0 until Rn) {
+		//   if (cont) {
+		//     if (R( index( l, i ) ) != null) {
+		//       if (((R( index( l, i ) )).id - key.id).abs < mdist) {
+		// 	cont = false;
+		// 	R( index( l, i ) ).ref ! route(msg, key);
+		//       }
+		//     }
+		//   }
+		// }
 		for (i <- 0 until L_small.size) {
 		  if (cont && (L_small(i) != null)) {
 		    dist = (L_small(i).id - key.id).abs;
 		    if (dist < mdist) {
 		      //must agree on at least prefix size l, other distance could not be less
 		      cont = false;
+		      println("Forwarding to leaf node")
 		      L_small(i).ref ! route(msg,key)
 		    }
 		  }
@@ -168,13 +202,16 @@ object Pastry {
 		    dist = (L_large(i).id - key.id).abs;
 		    if (dist < mdist) {
 		      cont = false;
+		      println("Forwarding to leaf node")
 		      L_large(i).ref ! route(msg,key)
 		    }
 		  }
 		}
 
-		if (cont) //nobody is closer than us
+		if (cont) {//nobody is closer than us
+		  println("Delivering to self")
 		  self ! deliver( msg, key );
+		}
 
 	      }
 	    }
@@ -183,6 +220,7 @@ object Pastry {
 	printf("Node %d received message: ", id );
 	println( msg );
 	if (msg == "join") {
+	  println("Sending state...")
 	  var Z : IdRef = new IdRef();
 	  Z.id = id;
 	  Z.ref = self;
@@ -191,25 +229,32 @@ object Pastry {
 	}
       }
       case initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef]) => {
-	L_small = smallLeafs
-	L_large = bigLeafs
+
+	L_small = smallLeafs.clone;
+	L_large = bigLeafs.clone;
+
 	if(neighbor.id>id){
 	  addToLargeLeafs(neighbor)
 	}else{
 	  addToSmallLeafs(neighbor)
 	}
+
+	val myIdRef = new IdRef()
+	myIdRef.ref = self
+	myIdRef.id = id
+
 	var i = 0
 	for(i <- 0 until L_small.length){
-	  if(L_small(i)!=null){
 	    L_small(i).ref ! bigLeaf(myIdRef)
-	  }
 	}
 	var j = 0
 	for(j <- 0 until L_large.length){
-	  if(L_large(j)!=null){
 	    L_large(j).ref ! smallLeaf(myIdRef)
-	  }
 	}
+
+	//the joining process is now complete
+	printf("Node %d succesfully joins network\n", id);
+	joined = true;
       }
       case bigLeaf(leaf:IdRef) => {
 	addToLargeLeafs(leaf)
@@ -217,44 +262,125 @@ object Pastry {
       case smallLeaf(leaf:IdRef) => {
 	addToSmallLeafs(leaf)
       }
+      case ReadyQuery => {
+	if (joined)
+	  sender ! true
+	else
+	  sender ! false
+      }
+      case printstate => {
+	printf("Node %d\n", id);
+	print("L_small:\n")
+	var i : Int = 0;
+	for (i <- 0 until L_small.size)
+	  println(L_small(i).id)
+
+	print("L_large:\n")
+	for (i <- 0 until L_large.size)
+	  println(L_large(i).id)
+
+
+	sender ! true
+	
+      }
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
-      var j=0
-      if(L_small(0)==null){
-	j+=1
-	while((L_small(j)==null)&&(j<L_small.length)){
-	  j+=1
-	}/**j is first non null place*/
-	L_small(j-1)=leaf
-      }
-      if((leaf.id<id)&&(leaf.id>L_small(j).id)){
-	var temp:IdRef = null
-	while((leaf.id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
-	  temp=L_small(j)
-	  L_small(j)=leaf
-	  L_small(j-1)=temp
-	  j+=1
+      var i : Int = 0;
+      //add leaf
+      L_small.prepend( leaf );
+      //find correct spot
+      while (i < L_small.size - 1) {
+	if (L_small(i).id > L_small(i + 1).id) {
+	  //swap them
+	  var tmp = L_small(i)
+	  L_small(i) = L_small(i + 1)
+	  L_small(i + 1) = tmp
+
 	}
+	i += 1;
       }
+
+      if (L_small.size > base) {
+	//too many leafs
+	//delete smallest
+	L_small = L_small.drop(1);
+      }
+	
+	
+      
+      // var sort:Boolean = false
+      // if(L_small.length==0){/**empty, does not need to be sorted*/ 
+      // 	L_small += leaf
+      // }
+      // else if(L_small.length<base){ /**not full*/
+      // 	L_small.prepend(leaf)
+      // 	sort = true
+      // }
+      // else if ((L_small.length==base)&&(leaf.id>L_small(0).id)){/**full, and the leaf is in range to be added*/ 
+      // 	L_small(0)=leaf
+      // 	sort = true
+      // }
+      // if(sort){ /**needs to be sorted*/ 
+      // 	var j = 1
+      // 	var temp:IdRef = null
+      // 	while((leaf.id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
+      // 	  temp=L_small(j)
+      // 	  L_small(j)=leaf
+      // 	  L_small(j-1)=temp
+      // 	  j+=1
+      // 	}   
+      // }
     }
     def addToLargeLeafs(leaf:IdRef){
-      var j= L_large.length-1
-      if(L_large(L_large.length-1)==null){
-	j+= -1
-	while((L_large(j)==null)&&(j>=0)){
-	  j+= -1
-	}/**j is first non null place*/
-	L_small(j+1)=leaf
-      }
-      if((leaf.id>id)&&(leaf.id<L_large(j).id)){ 
-	var temp:IdRef = null
-	while((leaf.id<L_large(j).id)&&(j>=0)){
-	  temp=L_large(j)
-	  L_large(j)=leaf
-	  L_large(j+1)=temp
-	  j += -1
+      var i : Int = 0;
+      //add leaf
+      L_large.prepend( leaf );
+      //find correct spot
+      while (i < L_large.size - 1) {
+	if (L_large(i).id > L_large(i + 1).id) {
+	  //swap them
+	  var tmp = L_large(i)
+	  L_large(i) = L_large(i + 1)
+	  L_large(i + 1) = tmp
+	  
 	}
+	i += 1;
+
       }
+
+      if (L_large.size > base) {
+	//too many leafs
+	//delete largest
+	L_large = L_large.dropRight(1);
+      }
+    // var sort:Boolean = false
+    //   if(L_large.length==0){/**empty, does not need to be sorted*/ 
+    // 	L_large = L_large += leaf
+    //   }
+    //   else {
+    // 	if(L_large.length<base){ /**not full*/
+    // 	  L_large= L_large += leaf
+    // 	  sort = true
+    // 	}
+    // 	else {
+
+    // 	  if ((L_large.length==base)&&(leaf.id<L_large(L_large.length).id)){/**full, and the leaf is in range to be added*/ 
+    // 	    L_large(L_large.length-1)=leaf
+    // 	    sort = true
+    // 	  }
+    // 	}
+    //   }
+
+    //   if(sort){ /**needs to be sorted*/ 
+    // 	var j = L_large.length-1
+    // 	var temp:IdRef = null
+    // 	while((leaf.id<L_large(j-1).id)&&(j>0)){/**sort leafs(i) into L_small array*/
+    // 	  temp=L_large(j-1)
+    // 	  L_large(j-1)=leaf
+    // 	  L_large(j)=temp
+    // 	  j+= -1
+    // 	}   
+    //   }
     }
     def addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef)={
       val neighborID = BigInttoArr(nID.id,base) /**find id sequences*/
@@ -352,7 +478,7 @@ object Pastry {
   def main(args: Array[String]) = { 
     val b = 4 /**nodeid and keys are a sequence in base 2^b*/
     val base = math.pow(2,b).toInt
-    val N = 100   /**number of nodes*/
+    val N : Int = args(0).toInt  /**number of nodes*/
     val system = ActorSystem("PastrySystem")
     var nodeArray = ArrayBuffer[ActorRef]()
     var counter = 0
@@ -360,12 +486,40 @@ object Pastry {
     var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
       randomID = genID(base)
-
-      //      while (ids_generated.contains(
+      while (ids_generated.contains( randomID )) {
+	randomID = genID(base)
+	
+      }
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
       nodeArray = nodeArray += nodey
       counter += 1
-    }   
+    }
+    //add first node
+    nodeArray(0) ! join(null);  
+  
+    //add other nodes
+    var i : Int = 0;
+    for (i <- 1 until N) {
+      nodeArray(i) ! join(nodeArray(i -1 ));  
+      //wait for join process to complete
+      implicit val timeout = Timeout(20 seconds)
+      var isready: Boolean = false;
+      while (!isready) {
+	val future = nodeArray(i) ? ReadyQuery
+	isready =  Await.result(future.mapTo[Boolean], timeout.duration )
+      }
+    }
+
+    println("Done with setup.")
+
+    //now let's print the system
+    for (i <- 0 until N) {
+      implicit val timeout = Timeout(20 seconds)
+      var isready: Boolean = false;
+      val future = nodeArray(i) ? printstate
+      println();
+      isready =  Await.result(future.mapTo[Boolean], timeout.duration )
+    }
 
     system.shutdown
   }
@@ -405,8 +559,8 @@ object Pastry {
       myArray = myArray += (leftover.mod(bbase)).toInt
       leftover = leftover/(bbase)
       counter += 1
-    }
+      }
     return myArray
-  }
+    }
 
 }
