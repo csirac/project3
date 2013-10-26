@@ -214,3 +214,45 @@ run 14
 run 100
 run 1000
 run 10000
+compile
+run 10000
+run 1000
+run 10000
+run 1000
+run 5000
+run 10000
+run 100000
+run 10000
+run 1000
+run 100
+compile
+run 100
+run 1000
+compile
+run 1000
+run 100
+run 1000
+compile
+run 100
+run 1000
+run 10000
+compile
+run 100
+run 1000
+compile
+run 100
+run 1000
+run 100
+run 1000
+run 100
+compile
+run 100
+run 1000
+run 10000
+run 100
+vompilr
+compile
+run 100
+run 1000
+run 10000
+exit
