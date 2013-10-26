@@ -20,6 +20,8 @@ case class ReadyQuery
 case class Printstate
 case class Printrouting
 case class addToRouting(routing: ArrayBuffer[IdRef],n:IdRef)
+case class CheckLeaves
+case class CheckR
 
 class IdRef {
   var ref : ActorRef = null;
@@ -210,9 +212,21 @@ object Pastry {
       case initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef]) => {
 	Z = neighbor; // record who we got routed to, for future reference
 
-	L_small = smallLeafs.clone;
-	L_large = bigLeafs.clone;
-
+	/**L_small = smallLeafs.clone;
+	L_large = bigLeafs.clone; */
+	var k = 0
+	for(k <- 0 until bigLeafs.length){
+	  if(bigLeafs(k).id>id){
+	    addToLargeLeafs(bigLeafs(k))
+	  }
+	}    
+	for(k <- 0 until smallLeafs.length){
+	  if(smallLeafs(k).id < id) {
+	    addToSmallLeafs(smallLeafs(k))
+	  }
+	}    
+	
+	
 	if(neighbor.id>id){
 	  addToLargeLeafs(neighbor)
 	}else{
@@ -226,12 +240,12 @@ object Pastry {
 	var i = 0
 	for(i <- 0 until L_small.length){
 	  L_small(i).ref ! bigLeaf(myIdRef)
-	  L_small(i).ref ! addToRouting(R, myIdRef ) 
+//	  L_small(i).ref ! addToRouting(R, myIdRef ) 
 	}
 	var j = 0
 	for(j <- 0 until L_large.length){
 	  L_large(j).ref ! smallLeaf(myIdRef)
-	  L_large(j).ref ! addToRouting(R, myIdRef ) 
+//	  L_large(j).ref ! addToRouting(R, myIdRef ) 
 	}
 
 	//the joining process should now be complete
@@ -248,12 +262,16 @@ object Pastry {
       }
      
       case bigLeaf(leaf:IdRef) => {
-	addToLargeLeafs(leaf)
-	trim_routing_table();
+	if(leaf.id>id){
+	  addToLargeLeafs(leaf)
+	  trim_routing_table();
+	}
       }
       case smallLeaf(leaf:IdRef) => {
-	addToSmallLeafs(leaf)
-	trim_routing_table();
+	if(leaf.id < id) {
+	  addToSmallLeafs(leaf)
+	  trim_routing_table();
+	}
       }
       case ReadyQuery => {
 	var  b : IdRef = new IdRef();
@@ -353,6 +371,40 @@ object Pastry {
        R( index(l, m) ) = nID;
       
      }
+      case CheckLeaves => {
+	var i = 0
+	for (i <- 0 until L_small.length){
+	  if(L_small(i).id>=id){
+	    println("Error for small leaves of " + id)
+	  }
+	}
+	for (i <- 0 until L_large.length){
+	  if(L_large(i).id<=id){
+	    println("Error for large leaves of " + id)
+	  }
+	}
+	sender ! true
+      }
+      case CheckR => {
+	val myIdSeq = BigInttoArr(id,16)
+	var i = 0
+	var j = 0
+	for(i <- 0 until 32){
+	  for(j <-0 until 16){
+	    if(R(index(i,j))!=null){
+	      var nSeq = BigInttoArr(R(index(i,j)).id,16)
+	      var matches = sequenceMatch(myIdSeq,nSeq)
+	      var nextElem = nSeq(31-matches)
+	      if(i!=matches) println("error")
+	      if(j!=nextElem) println("error")
+	    }
+	  }
+	}
+	 
+	sender ! true
+      }
+  
+      
      /* case addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef) => {
 	var neighborID = BigInttoArr(nID.id,base) /**find id sequences*/
 	var myID = BigInttoArr(id,base)
@@ -667,13 +719,14 @@ object Pastry {
     var randomID:BigInt = 0
     var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
+
       randomID = genID(base) % 100000
       while (ids_generated.contains( randomID )) {
 	randomID = genID(base)  % 100000
       }
       ids_generated.append( randomID );
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
-      nodeArray = nodeArray += nodey
+      nodeArray.append(nodey)
       counter += 1
     }
     
@@ -704,26 +757,48 @@ object Pastry {
 	printf("%d incorrectly routed to %d, could have been %d\n", ids_generated(i), isready.id, calculate_join(i, ids_generated(i), ids_generated))
     }
 
+    /**test leaves*/
+    for (i <- 1 until N) {
+      implicit val timeout = Timeout(20 seconds)
+      var isready: Boolean = false;
+      val future = nodeArray(i) ? CheckLeaves
+      isready =  Await.result(future.mapTo[Boolean], timeout.duration )
+      
+    }
+    
+    /**test routing tables*/
+    for (i <- 1 until N) {
+      implicit val timeout = Timeout(20 seconds)
+      var isready: Boolean = false;
+      val future = nodeArray(i) ? CheckR
+      isready =  Await.result(future.mapTo[Boolean], timeout.duration )
+      
+    }
+  
+
     println("Done with setup.")
 
     //now let's print the system
+
 /*    for (i <- 0 until 50) {
+
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printstate
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration )
-    }
+    }*/
 
 //    print routing tables
 //    for(i<-0 until N){
-      println("Routing table for node " + i)
+     /** println("Routing table for node " + i)
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printrouting
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration) 
 //    }  */
+  
 
     system.shutdown
     
