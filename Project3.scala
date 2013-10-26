@@ -324,20 +324,30 @@ object Pastry {
 	//}
 	sender ! true
       }
-     /* case addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef) => {
+     case addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef) => {
 	var l : Int = shl(nID.id, id);
 	var i : Int = 0;
 	var j : Int = 0;
 
-	for (i <- 0 until (l - 1)) {
+	for (i <- 0 to (l - 1)) {
 	  for (j <- 0 to Rn) {
 	    R(index(i,j)) = routing(index(i,j));
 	  }
 	}
-	
-	
-     }*/
-      case addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef) => {
+
+       var k : Int = getdigit(id, l);
+       var m : Int = getdigit(nID.id, l);
+       for (j <- 0 to Rn) {
+	 if (j != k && j != m) {
+	   R(index(l, j)) = routing(index(l, j))
+	 }
+       }
+       
+       R( index(l, m) ) = nID;
+
+      
+     }
+     /* case addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef) => {
 	var neighborID = BigInttoArr(nID.id,base) /**find id sequences*/
 	var myID = BigInttoArr(id,base)
 	val matches = sequenceMatch(neighborID,myID)/**same up to place matches-1*/
@@ -387,7 +397,7 @@ object Pastry {
 	      
 	
 	}
-      }
+      }*/
     }
     def send_to_nearest_leaf(msg : String, key : IdRef) {
       var dist : BigInt = (id - key.id).abs;
