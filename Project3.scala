@@ -259,6 +259,15 @@ object Pastry {
 	//make sure that no leafs are in the routing table
 	trim_routing_table();
 
+	val myidref = new IdRef
+	myidref.id = id
+	myidref.ref = self
+	/**give out routing table*/
+	for(i <- 0 until R.length){
+	  if(R(i)!=null){
+	    R(i).ref ! addToRouting(R,myidref)
+	  }
+	}
       }
      
       case bigLeaf(leaf:IdRef) => {
@@ -314,8 +323,43 @@ object Pastry {
 	}
 	sender ! true
       }
-      case addToRouting(routing:ArrayBuffer[IdRef],n:IdRef) => {
-	addToRouting(routing,n)
+      case addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef) => {
+	val neighborID = BigInttoArr(nID.id,base) /**find id sequences*/
+	val myID = BigInttoArr(id,base)
+	val matches = sequenceMatch(neighborID,myID)/**same up to place matches-1*/
+	var i=0 /**row of routing*/
+	var j=0 /**column of routing*/
+	while(i<=32){ /**sequences are of length 32, go through each row*/
+	  if(i<matches){
+	    while(j<base){ /**copy entire row*/
+	      if((R(index(i,j)))==null){
+		R(index(i,j))=routing(index(i,j))
+	      }
+	      j+=1
+	    }
+	  }
+	      else if (i==matches){/**copy row, except when column equals myID(matches)*/
+		while (j<base){
+		  if(((R(index(i,j)))==null)&&(j!=myID(matches))){
+		    R(index(i,j))=routing(index(i,j))
+		  }
+		  j+=1
+		}
+	      }
+		else if (i>matches) {
+		  while((routing(index(i,j))==null)&&(j<(base-1))) {
+		    j+=1
+		  }
+		  
+		  if(R(index(matches,neighborID(matches)))==null){
+		    if (j != base)
+		      R(index(matches,neighborID(matches))) = routing(index(i,j))
+		  }
+		}
+	  i+=1
+	  j=0
+	}
+	
       }
     }
     def trim_routing_table() {
@@ -437,46 +481,7 @@ object Pastry {
     // 	  j+= -1
     // 	}   
     //   }
-    }
-    def addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef)={
-      val neighborID = BigInttoArr(nID.id,base) /**find id sequences*/
-      val myID = BigInttoArr(id,base)
-      val matches = sequenceMatch(neighborID,myID)/**same up to place matches-1*/
-      var i=0 /**row of routing*/
-      var j=0 /**column of routing*/
-      while(i<=32){ /**sequences are of length 32, go through each row*/
-	if(i<matches){
-	  while(j<base){ /**copy entire row*/
-	    if((R(index(i,j)))==null){
-	      R(index(i,j))=routing(index(i,j))
-	    }
-	    j+=1
-	  }
-	}
-	    else if (i==matches){/**copy row, except when column equals myID(matches)*/
-	      while (j<base){
-		if(((R(index(i,j)))==null)&&(j!=myID(matches))){
-		  R(index(i,j))=routing(index(i,j))
-		}
-		j+=1
-	      }
-	    }
-		else if (i>matches) {
-		  while((routing(index(i,j))==null)&&(j<(base-1))) {
-		    j+=1
-		  }
-		  
-		  if(R(index(matches,neighborID(matches)))==null){
-		    if (j != base)
-		      R(index(matches,neighborID(matches))) = routing(index(i,j))
-		  }
-		}
-	i+=1
-	j=0
-      }
-      
-    }
-    
+    }   
     def sequenceMatch(x:ArrayBuffer[Int],y:ArrayBuffer[Int]):Int ={ /**finds how long sequences match from beginning*/
       var i = x.length-1
       var matches = 0
@@ -547,8 +552,7 @@ object Pastry {
       randomID = genID(base) % BigInt(1000)
       while (ids_generated.contains( randomID )) {
 	randomID = genID(base)
-	
-      }
+      }	
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
       nodeArray = nodeArray += nodey
       counter += 1
@@ -582,19 +586,14 @@ object Pastry {
     }
 
     /**print routing tables*/
-    /*for(i<-0 until N){
+    for(i<-0 until N){
       println("Routing table for node " + i)
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printrouting
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration)
-<<<<<<< HEAD
     }
- 
-=======
-    }*/
->>>>>>> 6e3273a34b46888a1bcc53fee0a839eecd2d720f
     system.shutdown
   }
 

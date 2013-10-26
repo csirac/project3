@@ -183,3 +183,9 @@ exit
 =======
 run 50
 >>>>>>> 6e3273a34b46888a1bcc53fee0a839eecd2d720f
+compile
+exit
+compile
+run 100
+compile
+run 100
