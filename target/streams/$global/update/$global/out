@@ -7,7 +7,7 @@
 [0m[[0mdebug[0m] [0m== resolving dependencies for project-1#project-1_2.10;0.0 [compile][0m
 [0m[[0mdebug[0m] [0m== resolving dependencies project-1#project-1_2.10;0.0->org.scala-lang#scala-library;2.10.2 [compile->default(compile)][0m
 [0m[[0minfo[0m] [0mResolving org.scala-lang#scala-library;2.10.2 ...[0m
-[0m[[0mdebug[0m] [0msbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@1fde0ab0[0m
+[0m[[0mdebug[0m] [0msbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@42bf9088[0m
 [0m[[0mdebug[0m] [0msbt-chain: module revision found in cache: org.scala-lang#scala-library;2.10.2[0m
 [0m[[0mdebug[0m] [0m	local: revision in cache: org.scala-lang#scala-library;2.10.2[0m
 [0m[[0mdebug[0m] [0m	found org.scala-lang#scala-library;2.10.2 in sbt-chain[0m
@@ -376,7 +376,7 @@
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang#scala-reflect;2.10.2!scala-reflect.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang#jline;2.10.2!jline.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.fusesource.jansi#jansi;1.4!jansi.jar[0m
-[0m[[0mdebug[0m] [0m:: resolution report :: resolve 953ms :: artifacts dl 182ms[0m
+[0m[[0mdebug[0m] [0m:: resolution report :: resolve 871ms :: artifacts dl 34ms[0m
 [0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 compile produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-compile.xml[0m
 [0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 runtime produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-runtime.xml[0m
 [0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 test produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-test.xml[0m
@@ -390,5 +390,5 @@
 [0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 docs produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-docs.xml[0m
 [0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 pom produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-pom.xml[0m
 [0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 scala-tool produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-scala-tool.xml[0m
-[0m[[0mdebug[0m] [0m	resolve done (953ms resolve - 182ms download)[0m
+[0m[[0mdebug[0m] [0m	resolve done (871ms resolve - 34ms download)[0m
 [0m[[0minfo[0m] [0mDone updating.[0m

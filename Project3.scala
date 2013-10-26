@@ -52,7 +52,7 @@ object Pastry {
 	  myid.id = id;
 	  myid.ref = self;
 	  n ! route( "join", myid );
-//	  R(0) = myid;
+
 	} else {
 	  joined = true;
 	}
@@ -74,18 +74,7 @@ object Pastry {
 	
 	var j : Int = getdigit( id, l );
 	var k : Int = getdigit( idin.id, l );
-	printf("In inittable, j, k: %d, %d\n", j, k)
-	printf("l: %d\n",l); 
-	printf("id: ")
-	for (i <- 0 to 31) {
-	  print(getdigit(id, i))
-	}
-	println
-	printf("idin: ")
-	for (i <- 0 to 31) {
-	  print(getdigit(idin.id, i))
-	}
-	       
+
 	R( index( l, k ) ) = idin;
 
 
@@ -290,14 +279,22 @@ object Pastry {
 	var i : Int = 0;
 	var j : Int = 0;
 
+	println("myid: " + BigInttoArr(id,base))
 	for (i <- 0 until Rm) {
 	  for (j <- 0 until Rn) {
 	    if (R(index(i,j)) != null) {
-	      print(R(index(i,j)).id)
-	      print(" ");
+	      var seqArray = BigInttoArr(R(index(i,j)).id,base)
+	      print(sequenceMatch(seqArray,BigInttoArr(id,base)))
+	      /**var k = 31
+	      while (k >= 0){
+		print(sequenceMatches(seqArray(k),R))
+		print(",")
+		k += -1
+	      }*/
+	      print("     ");
 	    }
 	    else {
-	      print("n ");
+	      print("  n  ");
 	    }
 	  }
 	  println();
@@ -582,15 +579,31 @@ object Pastry {
     }
 
     def getdigit(m: BigInt, k: Int) : Int = {
+
       var l : Int = 31 - k;
      // printf("getdigit l: %d\n", l)
       var tmp : BigInt  = m % BigInt(16).pow(l + 1)
      // printf("getdigit tmp: %d\n", tmp)
       tmp /= BigInt(16).pow(l)
       //printf("getdigit tmp: %d\n", tmp)
+
+ 
+    //  val seqArray = BigInttoArr(m,16)
+    //  val fseqArray = flipSequence(seqArray)
+    //  return fseqArray(k)
+
       val r : Int = tmp.toInt
       
-      return r;
+      return r; 
+    }
+    def flipSequence(seq:ArrayBuffer[Int]):ArrayBuffer[Int] = {
+      var fseq = new ArrayBuffer[Int]
+      var i = 31
+      while(i>=0){
+	fseq = fseq += seq(i)
+	i += -1
+      }
+      return fseq
     }
 
   }
@@ -608,9 +621,9 @@ object Pastry {
     var randomID:BigInt = 0
     var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
-      randomID = genID(base) % 1000
+      randomID = genID(base)
       while (ids_generated.contains( randomID )) {
-	randomID = genID(base) % 1000
+	randomID = genID(base)
       }
       ids_generated.prepend( randomID );
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
