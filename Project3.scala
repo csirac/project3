@@ -22,15 +22,19 @@ case class Printrouting
 case class addToRouting(routing: ArrayBuffer[IdRef],n:IdRef)
 case class CheckLeaves
 case class CheckR
+case class Calculate
+case class MessagesReceived
+case class MyJumps(jumps:Int)
 
 class IdRef {
   var ref : ActorRef = null;
   var id : BigInt = BigInt(-1);
+  var jumps: Int = 0 /**counts message jumps*/
 }
 
 
 object Pastry { 
-  class Node(id:BigInt,base: Int) extends Actor {
+  class Node(id:BigInt,base: Int,Listener:ActorRef) extends Actor {
     var joined : Boolean = false; // whether this node has joined network
     var R = ArrayBuffer[IdRef]()// routing array
     var L_small = ArrayBuffer[IdRef]()// leaf array, smaller than us , starting with smallest
@@ -195,6 +199,7 @@ object Pastry {
 
 	      }
 	    }
+	key.jumps += 1
       }
       case deliver( msg: String, key : IdRef ) => {
 //	printf("Node %d received message: ", id );
@@ -207,6 +212,10 @@ object Pastry {
 	  Zout.ref = self;
 	  key.ref ! inittable( Zout, R );
 	  key.ref ! initializeLeafs( Zout , L_large , L_small)
+	}
+	else{
+	key.jumps += 1
+	Listener ! MyJumps(key.jumps)
 	}
       }
       case initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef]) => {
@@ -706,7 +715,23 @@ object Pastry {
 
   }
 
-
+  class Listener extends Actor {
+    var sum = 0 /**sum of all jumps*/
+    var messages = 0 /**number of messages received*/
+    def receive = {
+      case MyJumps(jumps : Int) => {
+	sum += jumps
+	messages += 1
+      }
+      case Calculate => {
+	val average = sum/messages /**average number of jumps that a message took*/
+	sender ! average
+      }
+      case MessagesReceived => {
+	sender ! messages
+      }
+    }
+  }
 
   /**main method*/
   def main(args: Array[String]) = { 
@@ -714,6 +739,7 @@ object Pastry {
     val base = math.pow(2,b).toInt
     val N : Int = args(0).toInt  /**number of nodes*/
     val system = ActorSystem("PastrySystem")
+    val listener = system.actorOf(Props(classOf[Listener]), "listener")
     var nodeArray = ArrayBuffer[ActorRef]()
     var counter = 0
     var randomID:BigInt = 0
@@ -725,7 +751,7 @@ object Pastry {
 	randomID = genID(base)  % 100000
       }
       ids_generated.append( randomID );
-      var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
+      var nodey = system.actorOf(Props(classOf[Node],randomID,base,listener), counter.toString)
       nodeArray.append(nodey)
       counter += 1
     }
@@ -774,7 +800,14 @@ object Pastry {
       isready =  Await.result(future.mapTo[Boolean], timeout.duration )
       
     }
-  
+
+    /**ask listener*/
+      implicit val timeout = Timeout(20 seconds)
+      var Messages: Int = 0
+      val future = listener ? MessagesReceived
+      Messages =  Await.result(future.mapTo[Int], timeout.duration )
+      println(Messages)
+
 
     println("Done with setup.")
 
