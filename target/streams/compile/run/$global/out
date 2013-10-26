@@ -1,28 +1,10 @@
-[0m[[0minfo[0m] [0mRunning Pastry 5[0m
+[0m[[0minfo[0m] [0mRunning Pastry 50[0m
 [0m[[0mdebug[0m] [0mStarting sandboxed run...[0m
 [0m[[0mdebug[0m] [0mWaiting for threads to exit or System.exit to be called.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread run-main to exit[0m
 [0m[[0mdebug[0m] [0m  Classpath:[0m
 [0m[[0mdebug[0m] [0m	/home/alan/repo/target/scala-2.10/classes[0m
 [0m[[0mdebug[0m] [0m	/home/alan/.sbt/boot/scala-2.10.2/lib/scala-library.jar[0m
 [0m[[0mdebug[0m] [0m	/home/alan/.ivy2/cache/com.typesafe.akka/akka-actor_2.10/jars/akka-actor_2.10-2.2.0.jar[0m
 [0m[[0mdebug[0m] [0m	/home/alan/.ivy2/cache/com.typesafe/config/bundles/config-1.0.2.jar[0m
 [0m[[0mdebug[0m] [0m	/home/alan/.ivy2/cache/com.typesafe.akka/akka-testkit_2.10/bundles/akka-testkit_2.10-2.2.0.jar[0m
-[0m[[0mdebug[0m] [0m	Thread run-main exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread PastrySystem-akka.actor.default-dispatcher-4 to exit[0m
-[0m[[0mdebug[0m] [0m	Thread PastrySystem-akka.actor.default-dispatcher-4 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread PastrySystem-akka.actor.default-dispatcher-3 to exit[0m
-[0m[[0mdebug[0m] [0m	Thread PastrySystem-akka.actor.default-dispatcher-3 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread PastrySystem-akka.actor.default-dispatcher-2 to exit[0m
-[0m[[0mdebug[0m] [0m	Thread PastrySystem-akka.actor.default-dispatcher-2 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread PastrySystem-akka.actor.default-dispatcher-5 to exit[0m
-[0m[[0mdebug[0m] [0m	Thread PastrySystem-akka.actor.default-dispatcher-5 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread PastrySystem-akka.actor.default-dispatcher-7 to exit[0m
-[0m[[0mdebug[0m] [0m	Thread PastrySystem-akka.actor.default-dispatcher-7 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread PastrySystem-akka.actor.default-dispatcher-6 to exit[0m
-[0m[[0mdebug[0m] [0m	Thread PastrySystem-akka.actor.default-dispatcher-6 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread PastrySystem-scheduler-1 to exit[0m
-[0m[[0mdebug[0m] [0m	Thread PastrySystem-scheduler-1 exited.[0m
-[0m[[0mdebug[0m] [0mInterrupting remaining threads (should be all daemons).[0m
-[0m[[0mdebug[0m] [0mSandboxed run complete..[0m
-[0m[[0mdebug[0m] [0mExited with code 0[0m
+[0m[[0mdebug[0m] [0mWaiting for thread run-main to exit[0m
