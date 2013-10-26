@@ -40,16 +40,19 @@ object Pastry {
 
     def receive = {
       case join(n) => {
+	var myid : IdRef = new IdRef;
+
 	Rn = base;
 	Rm = 32;
 	R = R.padTo(base * 32, null);
 
+
 	if (n != null) {
 	  //otherwise, we are the first node
-	  var myid : IdRef = new IdRef;
 	  myid.id = id;
 	  myid.ref = self;
 	  n ! route( "join", myid );
+	  R(0) = myid;
 	} else {
 	  joined = true;
 	}
@@ -70,11 +73,6 @@ object Pastry {
 	// need to fetch the l th digit of this node's id ( starting at 0th digit )
 	var j : Int = getdigit( id, l );
 	var k : Int = getdigit( idin.id, l );
-	if (l == 32) {
-	  //println("l = 32!")
-	  //println(id)
-	  //println(idin.id)
-	}
 	
 	R( index( l, k ) ) = idin;
 
@@ -102,26 +100,6 @@ object Pastry {
 	}
 	
 	var b2 : Boolean = false;
-	// var smallindex = 0;
-	// var largeindex = base - 1;
-	// while (b2) {
-	//   smallindex += 1;
-	//   if (smallindex < base)
-	//     b2 = (L_small(smallindex) == null)
-	//   else
-	//     b2 = false;
-	// }
-
-	// b2 = (L_small(largeindex) == null);
-	// while (b2) {
-	//   largeindex -= 1;
-	//   if ( largeindex > -1 ) {
-	//     b2 = (L_small(largeindex) == null)
-	//   }
-	//   else {
-	//     b2 = false
-	//   }
-	// }
 	
 	if (L_large.isEmpty) {
 	  if (L_small.isEmpty) {
@@ -217,6 +195,7 @@ object Pastry {
 	//printf("Node %d received message: ", id );
 	//println( msg );
 	if (msg == "join") {
+	  printf("node %d closest to %d\n", key.id, id);
 	  //println("Sending state...")
 	  var Z : IdRef = new IdRef();
 	  Z.id = id;
@@ -295,26 +274,45 @@ object Pastry {
 	
       }
       case Printrouting => {
-	var row = 0
-	var column = 0
-	println()
-	while(row<32){
-	  while(column<16){
-	    if(R(16*row+column)!=null){
-	      var tableSeq = BigInttoArr(R(16*row+column).id,base)
-	      for(i <- 31 to 0) {
-		print(tableSeq(i) + ",")
-	      }	      
+	printf("R:\n");
+	var i : Int = 0;
+	var j : Int = 0;
+
+	for (i <- 0 until Rm) {
+	  for (j <- 0 until Rn) {
+	    if (R(index(i,j)) != null) {
+	      print(R(index(i,j)).id)
+	      print(" ");
 	    }
-	    else print(null)
-	    
-	    print("   ")
-	    column += 1
+	    else {
+	      print("n ");
+	    }
 	  }
-	  column = 0
-	  println()
-	  row += 1
+	  println();
 	}
+	 
+	       
+      
+	//var row = 0
+	//var column = 0
+	//println()
+	// while(row<32){
+	//   while(column<16){
+	//     if(R(index(row,column))!=null){
+	//       var tableSeq = BigInttoArr(R(16*row+column).id,base)
+	//       for(i <- 31 to 0) {
+	// 	print(tableSeq(i) + ",")
+	//       }	      
+	//     }
+	//     else print("null")
+	    
+	//     print("   ")
+	//     column += 1
+	//   }
+	//   column = 0
+	//   println()
+	//  row += 1
+	//}
 	sender ! true
       }
       case addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef) => {
@@ -396,26 +394,26 @@ object Pastry {
     }
 
     def trim_routing_table() {
-      var i : Int = 0;
-      var j : Int = 0;
-      for (i <- 0 until L_small.size) {
-	for (j <- 0 until R.size) {
-	  if (R(j) != null) {
-	    if (L_small(i).id == R(j).id) {
-	      R(j) = null
-	    }
-	  }
-	}
-      }
-      for (i <- 0 until L_large.size) {
-	for (j <- 0 until R.size) {
-	  if (R(j) != null) {
-	    if (L_large(i).id == R(j).id) {
-	      R(j) = null
-	    }
-	  }
-	}
-      }
+      // var i : Int = 0;
+      // var j : Int = 0;
+      // for (i <- 0 until L_small.size) {
+      // 	for (j <- 0 until R.size) {
+      // 	  if (R(j) != null) {
+      // 	    if (L_small(i).id == R(j).id) {
+      // 	      R(j) = null
+      // 	    }
+      // 	  }
+      // 	}
+      // }
+      // for (i <- 0 until L_large.size) {
+      // 	for (j <- 0 until R.size) {
+      // 	  if (R(j) != null) {
+      // 	    if (L_large(i).id == R(j).id) {
+      // 	      R(j) = null
+      // 	    }
+      // 	  }
+      // 	}
+      // }
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
       var i : Int = 0;
@@ -583,9 +581,9 @@ object Pastry {
     var randomID:BigInt = 0
     var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
-      randomID = genID(base) % BigInt(1000)
+      randomID = genID(base) % 1000
       while (ids_generated.contains( randomID )) {
-	randomID = genID(base) % BigInt(1000)
+	randomID = genID(base) % 1000
       }
       ids_generated.prepend( randomID );
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
@@ -612,23 +610,23 @@ object Pastry {
     println("Done with setup.")
 
     //now let's print the system
-    for (i <- 0 until N) {
+    /*for (i <- 0 until N) {
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printstate
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration )
-    }
+    }*/
 
     /**print routing tables*/
-    /**for(i<-0 until N){
+    for(i<-0 until N){
       println("Routing table for node " + i)
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printrouting
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration)
-    }  */
+    }  
 
     system.shutdown
     
