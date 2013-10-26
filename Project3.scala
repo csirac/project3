@@ -196,7 +196,7 @@ object Pastry {
 //	printf("Node %d received message: ", id );
 //	println( msg );
 	if (msg == "join") {
-	  printf("node %d closest to %d\n", key.id, id);
+//	  printf("node %d closest to %d\n", key.id, id);
 	  //println("Sending state...")
 	  var Z : IdRef = new IdRef();
 	  Z.id = id;
@@ -222,27 +222,26 @@ object Pastry {
 
 	var i = 0
 	for(i <- 0 until L_small.length){
-	    L_small(i).ref ! bigLeaf(myIdRef)
+	  L_small(i).ref ! bigLeaf(myIdRef)
+	  L_small(i).ref ! addToRouting(R, myIdRef ) 
 	}
 	var j = 0
 	for(j <- 0 until L_large.length){
-	    L_large(j).ref ! smallLeaf(myIdRef)
+	  L_large(j).ref ! smallLeaf(myIdRef)
+	  L_large(j).ref ! addToRouting(R, myIdRef ) 
 	}
 
 	//the joining process should now be complete
 	joined = true;
-	//make sure that no leafs are in the routing table
-	trim_routing_table();
 
-	val myidref = new IdRef
-	myidref.id = id
-	myidref.ref = self
 	/**give out routing table*/
 	for(i <- 0 until R.length){
 	  if(R(i)!=null){
-	    R(i).ref ! addToRouting(R,myidref)
+	    R(i).ref ! addToRouting(R,myIdRef)
 	  }
 	}
+
+	
       }
      
       case bigLeaf(leaf:IdRef) => {
@@ -331,7 +330,8 @@ object Pastry {
 
 	for (i <- 0 to (l - 1)) {
 	  for (j <- 0 until Rn) {
-	    R(index(i,j)) = routing(index(i,j));
+	    if (R(index(i,j)) == null)
+	      R(index(i,j)) = routing(index(i,j));
 	  }
 	}
 
@@ -339,7 +339,8 @@ object Pastry {
        var m : Int = getdigit(nID.id, l);
        for (j <- 0 until Rn) {
 	 if (j != k && j != m) {
-	   R(index(l, j)) = routing(index(l, j))
+	   if (R(index(i,j)) == null)
+	     R(index(l, j)) = routing(index(l, j))
 	 }
        }
        
@@ -662,13 +663,13 @@ object Pastry {
     println("Done with setup.")
 
     //now let's print the system
-/*    for (i <- 0 until N) {
+    for (i <- 0 until 50) {
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printstate
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration )
-    }*/
+    }
 
 //    print routing tables
 //    for(i<-0 until N){
