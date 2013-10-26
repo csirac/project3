@@ -145,3 +145,10 @@ exit
 run 3
 exit
 run 3
+compile
+run 10
+compile
+run 10
+compile
+run 10
+exit

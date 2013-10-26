@@ -17,7 +17,8 @@ case class bigLeaf(leaf:IdRef)
 case class smallLeaf(leaf:IdRef)
 case class join(node: ActorRef)
 case class ReadyQuery
-case class printstate
+case class Printstate
+case class Printrouting
 
 class IdRef {
   var ref : ActorRef = null;
@@ -268,7 +269,7 @@ object Pastry {
 	else
 	  sender ! false
       }
-      case printstate => {
+      case Printstate => {
 	printf("Node %d\n", id);
 	print("L_small:\n")
 	var i : Int = 0;
@@ -282,6 +283,30 @@ object Pastry {
 
 	sender ! true
 	
+      }
+      case Printrouting => {
+	var row = 0
+	var column = 0
+	println()
+	println(R.length)
+	while(row<32){
+	  while(column<16){
+	    if(R(16*row+column)!=null){
+	      var tableSeq = BigInttoArr(R(16*row+column).id,base)
+	      for(i <- 31 to 0) {
+		print(tableSeq(i) + ",")
+	      }	      
+	    }
+	    else print(null)
+	    
+	    print("   ")
+	    column += 1
+	  }
+	  column = 0
+	  println()
+	  row += 1
+	}
+	sender ! true
       }
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
@@ -516,11 +541,20 @@ object Pastry {
     for (i <- 0 until N) {
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
-      val future = nodeArray(i) ? printstate
+      val future = nodeArray(i) ? Printstate
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration )
     }
 
+    /**print routing tables*/
+    for(i<-0 until N){
+      println("Routing table for node " + i)
+      implicit val timeout = Timeout(20 seconds)
+      var isready: Boolean = false;
+      val future = nodeArray(i) ? Printrouting
+      println();
+      isready =  Await.result(future.mapTo[Boolean], timeout.duration)
+    }
     system.shutdown
   }
 
@@ -561,6 +595,6 @@ object Pastry {
       counter += 1
       }
     return myArray
-    }
-
+  }
 }
+
