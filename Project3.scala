@@ -19,6 +19,7 @@ case class join(node: ActorRef)
 case class ReadyQuery
 case class Printstate
 case class Printrouting
+case class addToRouting(routing: ArrayBuffer[IdRef],n:IdRef)
 
 class IdRef {
   var ref : ActorRef = null;
@@ -308,6 +309,9 @@ object Pastry {
 	}
 	sender ! true
       }
+      case addToRouting(routing:ArrayBuffer[IdRef],n:IdRef) => {
+	addToRouting(routing,n)
+      }
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
       var i : Int = 0;
@@ -522,6 +526,7 @@ object Pastry {
       nodeArray = nodeArray += nodey
       counter += 1
     }
+    
     //add first node
     nodeArray(0) ! join(null);  
   
@@ -558,6 +563,7 @@ object Pastry {
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration)
     }
+ 
     system.shutdown
   }
 

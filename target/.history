@@ -174,3 +174,8 @@ run 10
 exit
 >>>>>>> cd8df35bc5780664c7910681947a06f5445b0313
 run 5
+compile
+run 1000
+compile
+run 100
+exit
