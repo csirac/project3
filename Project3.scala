@@ -56,7 +56,7 @@ object Pastry {
       }
 
       case inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] ) => {
-	println("Receiving table")
+
 	var l : Int = 0;
 	//receiving this message means this node is currently in the
 	//process of joining the network.
@@ -79,14 +79,15 @@ object Pastry {
 	  if (i != j) {
 	    if (r_in( index(l, i) ) != null) {
 	      R( index(l, i )) = r_in( index(l, i));
+	      if (R(index(l,i)).id == id)
+		println("Error: adding self to routing table in inittable");
 	    }
 	  }
 	}
 	
-	println("table updated")
       }
       case route( msg : String, key : IdRef ) => {
-	printf("Node %d received (%s, %d)\n", id, msg, key.id);
+//	printf("Node %d received (%s, %d)\n", id, msg, key.id);
 	if (msg == "join") {
 	  var myid : IdRef  = new IdRef();
 	  myid.id = id;
@@ -139,14 +140,13 @@ object Pastry {
 	    else {
 	      //use routing table
 	      var l : Int = shl( key.id, id );
-	      var keyl:BigInt  = key.id % BigInt(16)^{l + 1}
-	      keyl /= BigInt(16)^l
-	      var keylINT = keyl.toInt
+	     
+	      var keyl: Int  =  getdigit(key.id, l );
 
-	      if (R( index(l, keylINT) ) != null ) {
+	      if (R( index(l, keyl) ) != null ) {
 		//forward to node at this place in table
-		printf("Forwarding to (l, k)'th entry in routing table\n");
-		R( index( l, keylINT ) ).ref ! route( msg, key );
+//		printf("Forwarding to (l, k)'th entry in routing table, node %d\n", R(index(l, keylINT)).id);
+		R( index( l, keyl ) ).ref ! route( msg, key );
 		
 	      }
 	      else {
@@ -317,37 +317,47 @@ object Pastry {
 	val matches = sequenceMatch(neighborID,myID)/**same up to place matches-1*/
 	var i=0 /**row of routing*/
 	var j=0 /**column of routing*/
-	while(i<=32){ /**sequences are of length 32, go through each row*/
+	while(i<32){ /**sequences are of length 32, go through each row*/
 	  if(i<matches){
 	    while(j<base){ /**copy entire row*/
 	      if((R(index(i,j)))==null){
 		R(index(i,j))=routing(index(i,j))
+		if (R(index(i,j)) != null)
+		   if (R(index(i,j)).id == id)
+		      println("Error: adding self to routing table in tori's function clause 1");
 	      }
 	      j+=1
 	    }
 	  }
-	      else if (i==matches){/**copy row, except when column equals myID(matches)*/
-		while (j<base){
-		  if(((R(index(i,j)))==null)&&(j!=myID(matches))){
-		    R(index(i,j))=routing(index(i,j))
-		  }
-		  j+=1
-		}
-	      }
-		else if (i>matches) {
-		  while((routing(index(i,j))==null)&&(j<(base-1))) {
+	      else { 
+		if (i==matches){/**copy row, except when column equals myID(matches)*/
+		  while (j<base){
+		    if(((R(index(i,j)))==null)&&(j!=myID(matches))){
+		      R(index(i,j))=routing(index(i,j))
+		      if (R(index(i,j)) != null)
+			  if (R(index(i,j)).id == id)
+			    println("Error: adding self to routing table in tori's function clause 2");
+		    }
 		    j+=1
 		  }
-		  
+		} else {
+		/*  if (i>matches) {
+		    while((routing(index(i,j))==null)&&(j<(base-1))) {
+		      j+=1
+		    }
+		  }
+		
 		  if(R(index(matches,neighborID(matches)))==null){
 		    if (j != base)
 		      R(index(matches,neighborID(matches))) = routing(index(i,j))
 		  }
+		*/}
 		}
 	  i+=1
 	  j=0
-	}
+	      
 	
+	}
       }
     }
     def send_to_nearest_leaf(msg : String, key : IdRef) {
@@ -542,7 +552,8 @@ object Pastry {
       
     }
 
-    def getdigit(m: BigInt, l: Int) : Int = {
+    def getdigit(m: BigInt, k: Int) : Int = {
+      var l : Int = 31 - k;
       var tmp : BigInt  = m % BigInt(16)^{l + 1}
       tmp /= BigInt(16)^l
       val r : Int = tmp.toInt
@@ -603,7 +614,7 @@ object Pastry {
       isready =  Await.result(future.mapTo[Boolean], timeout.duration )
     }
 
-    /**print routing tables*/
+    /**print routing tables
     for(i<-0 until N){
       println("Routing table for node " + i)
       implicit val timeout = Timeout(20 seconds)
@@ -611,7 +622,7 @@ object Pastry {
       val future = nodeArray(i) ? Printrouting
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration)
-    }
+    }  */
     system.shutdown
   }
 
