@@ -146,6 +146,7 @@ exit
 run 3
 exit
 run 3
+<<<<<<< HEAD
 >>>>>>> eb5a2f850b38497b54840d64582ee655ba8c65a5
 run 3
 quit
@@ -163,3 +164,13 @@ run 24
 run 15
 run 25
 run 30
+=======
+compile
+run 10
+compile
+run 10
+compile
+run 10
+exit
+>>>>>>> cd8df35bc5780664c7910681947a06f5445b0313
+run 5
