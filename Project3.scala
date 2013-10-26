@@ -68,6 +68,11 @@ object Pastry {
 	// need to fetch the l th digit of this node's id ( starting at 0th digit )
 	var j : Int = getdigit( id, l );
 	var k : Int = getdigit( idin.id, l );
+	if (l == 32) {
+	  println("l = 32!")
+	  println(id)
+	  println(idin.id)
+	}
 	
 	R( index( l, k ) ) = idin;
 	for (i <- 0 until Rn) {
@@ -128,31 +133,8 @@ object Pastry {
 	}
 	if (b2) {
 	  //send to leaf with closest value to key.id, including ourselves
-	  var dist : BigInt = (id - key.id).abs;
-	  var mdist : BigInt = dist;
-	  var min :IdRef = new IdRef();
-	  min.id = id;
-	  min.ref = self;
-	  var i : Int = 0;
-	  for (i <- 0 until L_small.size) {
-	    dist = (L_small(i).id - key.id).abs;
-	    if (dist < mdist) {
-	      mdist = dist;
-	      min = L_small(i);
-	    }
-	  }
+	  send_to_nearest_leaf(msg, key)
 
-	  for (i <- 0 until L_large.size) {
-	    dist = (L_large(i).id - key.id).abs;
-	    if (dist < mdist) {
-	      mdist = dist;
-	      min = L_large(i);
-	    }
-	  }
-
-	  //min is now id of closest leaf node, including this one
-	  println("Delivering to leaf node");
-	  min.ref ! deliver( msg, key );
 	}
 	    else {
 	      //use routing table
@@ -170,50 +152,56 @@ object Pastry {
 	      else {
 		//rare case
 		//forward to a closer element, matching at least
-		//the same prefix, in the leaf set
-		//or routing table
+		//the same prefix in the routing table
 		var dist : BigInt = (id - key.id).abs;
 		var mdist : BigInt = dist;
 		var cont : Boolean = true;
 		var i : Int = 0;
 		//look through routing table first
-		// for (i <- 0 until Rn) {
-		//   if (cont) {
-		//     if (R( index( l, i ) ) != null) {
-		//       if (((R( index( l, i ) )).id - key.id).abs < mdist) {
-		// 	cont = false;
-		// 	R( index( l, i ) ).ref ! route(msg, key);
-		//       }
+		var m : Int = 0;
+		for (m <- l until 32) {
+		 for (i <- 0 until Rn) {
+		   if (cont) {
+		     if (R( index( m, i ) ) != null) {
+		       if (((R( index( m, i ) )).id - key.id).abs < mdist) {
+		 	 cont = false;
+		 	 R( index( m, i ) ).ref ! route(msg, key);
+		       }
+		     }
+		   }
+		 }
+		}
+		if (cont) {
+		  //deliver to nearest leaf
+		  send_to_nearest_leaf(msg, key);
+		}
+		// for (i <- 0 until L_small.size) {
+		//   if (cont && (L_small(i) != null)) {
+		//     dist = (L_small(i).id - key.id).abs;
+		//     if (dist < mdist) {
+		//       //must agree on at least prefix size l, other distance could not be less
+		//       cont = false;
+		//       println("Forwarding to leaf node")
+		//       L_small(i).ref ! route(msg,key)
 		//     }
 		//   }
 		// }
-		for (i <- 0 until L_small.size) {
-		  if (cont && (L_small(i) != null)) {
-		    dist = (L_small(i).id - key.id).abs;
-		    if (dist < mdist) {
-		      //must agree on at least prefix size l, other distance could not be less
-		      cont = false;
-		      println("Forwarding to leaf node")
-		      L_small(i).ref ! route(msg,key)
-		    }
-		  }
-		}
 
-		for (i <- 0 until L_large.size) {
-		  if (cont && L_large(i) != null) {
-		    dist = (L_large(i).id - key.id).abs;
-		    if (dist < mdist) {
-		      cont = false;
-		      println("Forwarding to leaf node")
-		      L_large(i).ref ! route(msg,key)
-		    }
-		  }
-		}
+		// for (i <- 0 until L_large.size) {
+		//   if (cont && L_large(i) != null) {
+		//     dist = (L_large(i).id - key.id).abs;
+		//     if (dist < mdist) {
+		//       cont = false;
+		//       println("Forwarding to leaf node")
+		//       L_large(i).ref ! route(msg,key)
+		//     }
+		//   }
+		// }
 
-		if (cont) {//nobody is closer than us
-		  println("Delivering to self")
-		  self ! deliver( msg, key );
-		}
+		// if (cont) {//nobody is closer than us
+		//   println("Delivering to self")
+		//   self ! deliver( msg, key );
+		// }
 
 	      }
 	    }
@@ -362,6 +350,34 @@ object Pastry {
 	
       }
     }
+    def send_to_nearest_leaf(msg : String, key : IdRef) {
+      var dist : BigInt = (id - key.id).abs;
+      var mdist : BigInt = dist;
+      var min :IdRef = new IdRef();
+      min.id = id;
+      min.ref = self;
+      var i : Int = 0;
+      for (i <- 0 until L_small.size) {
+	dist = (L_small(i).id - key.id).abs;
+	if (dist < mdist) {
+	  mdist = dist;
+	  min = L_small(i);
+	}
+      }
+      
+      for (i <- 0 until L_large.size) {
+	dist = (L_large(i).id - key.id).abs;
+	if (dist < mdist) {
+	  mdist = dist;
+	  min = L_large(i);
+	}
+      }
+      
+      //min is now id of closest leaf node, including this one
+      println("Delivering to leaf node");
+      min.ref ! deliver( msg, key );
+    }
+
     def trim_routing_table() {
       var i : Int = 0;
       var j : Int = 0;
@@ -551,8 +567,9 @@ object Pastry {
     while(counter<N){ /**make nodes*/
       randomID = genID(base) % BigInt(1000)
       while (ids_generated.contains( randomID )) {
-	randomID = genID(base)
-      }	
+	randomID = genID(base) % BigInt(1000)
+      }
+      ids_generated.prepend( randomID );
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
       nodeArray = nodeArray += nodey
       counter += 1
@@ -564,7 +581,8 @@ object Pastry {
     //add other nodes
     var i : Int = 0;
     for (i <- 1 until N) {
-      nodeArray(i) ! join(nodeArray(i -1 ));  
+      nodeArray(i) ! join(nodeArray(i -1 )); 
+      println
       //wait for join process to complete
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
