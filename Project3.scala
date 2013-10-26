@@ -19,6 +19,7 @@ case class join(node: ActorRef)
 case class ReadyQuery
 case class Printstate
 case class Printrouting
+case class addToRouting(routing: ArrayBuffer[IdRef],n:IdRef)
 
 class IdRef {
   var ref : ActorRef = null;
@@ -301,6 +302,9 @@ object Pastry {
 	}
 	sender ! true
       }
+      case addToRouting(routing:ArrayBuffer[IdRef],n:IdRef) => {
+	addToRouting(routing,n)
+      }
     }
     def send_to_nearest_leaf(msg : String, key : IdRef) {
       var dist : BigInt = (id - key.id).abs;
@@ -566,6 +570,7 @@ object Pastry {
       nodeArray = nodeArray += nodey
       counter += 1
     }
+    
     //add first node
     nodeArray(0) ! join(null);  
   
@@ -602,7 +607,11 @@ object Pastry {
       val future = nodeArray(i) ? Printrouting
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration)
-    }*/
+
+    }
+ 
+   } */
+
     system.shutdown
   }
 
