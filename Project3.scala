@@ -63,7 +63,7 @@ object Pastry {
 	l = shl(id, idin.id);
 	// l will be the row of this node's table which will be edited
 	var i : Int = 0;
-	// need to fetch the l nth digit of this node's id ( starting at 0th digit )
+	// need to fetch the l th digit of this node's id ( starting at 0th digit )
 	var j : Int = getdigit( id, l );
 	var k : Int = getdigit( idin.id, l );
 	
@@ -439,6 +439,9 @@ object Pastry {
     
     def index(i: Int, j: Int) : Int = {
       //return 
+      if ((i * Rn +j ) > Rn * Rm - 1)
+	printf( "(%d, %d) out of range\n", i, j)
+      
       return (i * Rn + j);
       
     }
@@ -448,7 +451,7 @@ object Pastry {
       var i : Int = 0;
       var b : Boolean = (arrx(31 - i) == arry(31 - i));
       while (b) {
-	if (i < 32) {
+	if (i < 31) {
 	  i += 1;
 	  b = (arrx(31 - i) == arry(31 - i));
 	}
@@ -485,7 +488,7 @@ object Pastry {
     var randomID:BigInt = 0
     var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
-      randomID = genID(base)
+      randomID = genID(base) % BigInt(1000)
       while (ids_generated.contains( randomID )) {
 	randomID = genID(base)
 	
