@@ -56,7 +56,7 @@ object Pastry {
       }
 
       case inittable( idin : IdRef, r_in : ArrayBuffer[IdRef] ) => {
-	println("Receiving table")
+	//println("Receiving table")
 	var l : Int = 0;
 	//receiving this message means this node is currently in the
 	//process of joining the network.
@@ -69,12 +69,14 @@ object Pastry {
 	var j : Int = getdigit( id, l );
 	var k : Int = getdigit( idin.id, l );
 	if (l == 32) {
-	  println("l = 32!")
-	  println(id)
-	  println(idin.id)
+	  //println("l = 32!")
+	  //println(id)
+	  //println(idin.id)
 	}
 	
 	R( index( l, k ) ) = idin;
+
+
 	for (i <- 0 until Rn) {
 	  if (i != j) {
 	    if (r_in( index(l, i) ) != null) {
@@ -83,10 +85,10 @@ object Pastry {
 	  }
 	}
 	
-	println("table updated")
+	//println("table updated")
       }
       case route( msg : String, key : IdRef ) => {
-	printf("Node %d received (%s, %d)\n", id, msg, key.id);
+	//printf("Node %d received (%s, %d)\n", id, msg, key.id);
 	if (msg == "join") {
 	  var myid : IdRef  = new IdRef();
 	  myid.id = id;
@@ -145,7 +147,7 @@ object Pastry {
 
 	      if (R( index(l, keylINT) ) != null ) {
 		//forward to node at this place in table
-		printf("Forwarding to (l, k)'th entry in routing table\n");
+		//printf("Forwarding to (l, k)'th entry in routing table\n");
 		R( index( l, keylINT ) ).ref ! route( msg, key );
 		
 	      }
@@ -207,10 +209,10 @@ object Pastry {
 	    }
       }
       case deliver( msg: String, key : IdRef ) => {
-	printf("Node %d received message: ", id );
-	println( msg );
+	//printf("Node %d received message: ", id );
+	//println( msg );
 	if (msg == "join") {
-	  println("Sending state...")
+	  //println("Sending state...")
 	  var Z : IdRef = new IdRef();
 	  Z.id = id;
 	  Z.ref = self;
@@ -247,7 +249,7 @@ object Pastry {
 	//make sure that no leafs are in the routing table
 	trim_routing_table();
 
-	val myidref = new IdRef
+/**	val myidref = new IdRef
 	myidref.id = id
 	myidref.ref = self
 	/**give out routing table*/
@@ -255,7 +257,7 @@ object Pastry {
 	  if(R(i)!=null){
 	    R(i).ref ! addToRouting(R,myidref)
 	  }
-	}
+	}*/
       }
      
       case bigLeaf(leaf:IdRef) => {
@@ -291,7 +293,6 @@ object Pastry {
 	var row = 0
 	var column = 0
 	println()
-	println(R.length)
 	while(row<32){
 	  while(column<16){
 	    if(R(16*row+column)!=null){
@@ -317,7 +318,8 @@ object Pastry {
 	val matches = sequenceMatch(neighborID,myID)/**same up to place matches-1*/
 	var i=0 /**row of routing*/
 	var j=0 /**column of routing*/
-	while(i<=32){ /**sequences are of length 32, go through each row*/
+	
+	while(i<32){ /**sequences are of length 32, go through each row*/
 	  if(i<matches){
 	    while(j<base){ /**copy entire row*/
 	      if((R(index(i,j)))==null){
@@ -328,7 +330,7 @@ object Pastry {
 	  }
 	      else if (i==matches){/**copy row, except when column equals myID(matches)*/
 		while (j<base){
-		  if(((R(index(i,j)))==null)&&(j!=myID(matches))){
+		  if(((R(index(i,j)))==null)&&(j!=myID(myID.length-1-matches))){
 		    R(index(i,j))=routing(index(i,j))
 		  }
 		  j+=1
@@ -339,9 +341,9 @@ object Pastry {
 		    j+=1
 		  }
 		  
-		  if(R(index(matches,neighborID(matches)))==null){
+		  if(R(index(matches,neighborID(neighborID.length-1-matches)))==null){
 		    if (j != base)
-		      R(index(matches,neighborID(matches))) = routing(index(i,j))
+		      R(index(matches,neighborID(neighborID.length-1-matches))) = routing(index(i,j))
 		  }
 		}
 	  i+=1
@@ -374,7 +376,7 @@ object Pastry {
       }
       
       //min is now id of closest leaf node, including this one
-      println("Delivering to leaf node");
+     // println("Delivering to leaf node");
       min.ref ! deliver( msg, key );
     }
 
@@ -595,24 +597,25 @@ object Pastry {
     println("Done with setup.")
 
     //now let's print the system
-    for (i <- 0 until N) {
+    /**for (i <- 0 until N) {
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printstate
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration )
-    }
+    }*/
 
     /**print routing tables*/
-    for(i<-0 until N){
+    /**for(i<-0 until N){
       println("Routing table for node " + i)
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printrouting
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration)
-    }
+    }*/
     system.shutdown
+    
   }
 
   /**generate random nodeid of length 32*/  
@@ -653,5 +656,6 @@ object Pastry {
       }
     return myArray
   }
+
 }
 
