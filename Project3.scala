@@ -254,15 +254,20 @@ object Pastry {
 	    L_large(j).ref ! smallLeaf(myIdRef)
 	}
 
-	//the joining process is now complete
-	printf("Node %d succesfully joins network\n", id);
+	//the joining process should now be complete
 	joined = true;
+	//make sure that no leafs are in the routing table
+	trim_routing_table();
+
       }
+     
       case bigLeaf(leaf:IdRef) => {
 	addToLargeLeafs(leaf)
+	trim_routing_table();
       }
       case smallLeaf(leaf:IdRef) => {
 	addToSmallLeafs(leaf)
+	trim_routing_table();
       }
       case ReadyQuery => {
 	if (joined)
@@ -311,6 +316,28 @@ object Pastry {
       }
       case addToRouting(routing:ArrayBuffer[IdRef],n:IdRef) => {
 	addToRouting(routing,n)
+      }
+    }
+    def trim_routing_table() {
+      var i : Int = 0;
+      var j : Int = 0;
+      for (i <- 0 until L_small.size) {
+	for (j <- 0 until R.size) {
+	  if (R(j) != null) {
+	    if (L_small(i).id == R(j).id) {
+	      R(j) = null
+	    }
+	  }
+	}
+      }
+      for (i <- 0 until L_large.size) {
+	for (j <- 0 until R.size) {
+	  if (R(j) != null) {
+	    if (L_large(i).id == R(j).id) {
+	      R(j) = null
+	    }
+	  }
+	}
       }
     }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
@@ -555,15 +582,19 @@ object Pastry {
     }
 
     /**print routing tables*/
-    for(i<-0 until N){
+    /*for(i<-0 until N){
       println("Routing table for node " + i)
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printrouting
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration)
+<<<<<<< HEAD
     }
  
+=======
+    }*/
+>>>>>>> 6e3273a34b46888a1bcc53fee0a839eecd2d720f
     system.shutdown
   }
 
