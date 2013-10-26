@@ -38,6 +38,8 @@ object Pastry {
     var Rn : Int = 0; // the number of columns of R
     var Rm : Int = 0; // the number of rows of R
 
+    var Z : IdRef = new IdRef();
+
     def receive = {
       case join(n) => {
 	var myid : IdRef = new IdRef;
@@ -158,8 +160,8 @@ object Pastry {
 		 }
 		}
 		if (cont) {
-		  //deliver to nearest leaf
-		  send_to_nearest_leaf(msg, key);
+		  //forward to nearest leaf
+		  forward_to_nearest_leaf(msg, key);
 		}
 		// for (i <- 0 until L_small.size) {
 		//   if (cont && (L_small(i) != null)) {
@@ -198,14 +200,15 @@ object Pastry {
 	if (msg == "join") {
 //	  printf("node %d closest to %d\n", key.id, id);
 	  //println("Sending state...")
-	  var Z : IdRef = new IdRef();
-	  Z.id = id;
-	  Z.ref = self;
-	  key.ref ! inittable( Z, R );
-	  key.ref ! initializeLeafs( Z , L_large , L_small)
+	  var Zout : IdRef = new IdRef();
+	  Zout.id = id;
+	  Zout.ref = self;
+	  key.ref ! inittable( Zout, R );
+	  key.ref ! initializeLeafs( Zout , L_large , L_small)
 	}
       }
       case initializeLeafs(neighbor:IdRef,bigLeafs:ArrayBuffer[IdRef],smallLeafs:ArrayBuffer[IdRef]) => {
+	Z = neighbor; // record who we got routed to, for future reference
 
 	L_small = smallLeafs.clone;
 	L_large = bigLeafs.clone;
@@ -253,10 +256,13 @@ object Pastry {
 	trim_routing_table();
       }
       case ReadyQuery => {
+	var  b : IdRef = new IdRef();
+	b.id = -1;
+	
 	if (joined)
-	  sender ! true
+	  sender ! Z
 	else
-	  sender ! false
+	  sender ! b
       }
       case Printstate => {
 	printf("Node %d\n", id);
@@ -425,6 +431,33 @@ object Pastry {
       //min is now id of closest leaf node, including this one
      // println("Delivering to leaf node");
       min.ref ! deliver( msg, key );
+    }
+    def forward_to_nearest_leaf(msg : String, key : IdRef) {
+      var dist : BigInt = (id - key.id).abs;
+      var mdist : BigInt = dist;
+      var min :IdRef = new IdRef();
+      min.id = id;
+      min.ref = self;
+      var i : Int = 0;
+      for (i <- 0 until L_small.size) {
+	dist = (L_small(i).id - key.id).abs;
+	if (dist < mdist) {
+	  mdist = dist;
+	  min = L_small(i);
+	}
+      }
+      
+      for (i <- 0 until L_large.size) {
+	dist = (L_large(i).id - key.id).abs;
+	if (dist < mdist) {
+	  mdist = dist;
+	  min = L_large(i);
+	}
+      }
+      
+      //min is now id of closest leaf node, including this one
+     
+      min.ref ! route( msg, key );
     }
 
     def trim_routing_table() {
@@ -634,11 +667,11 @@ object Pastry {
     var randomID:BigInt = 0
     var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
-      randomID = genID(base)  
+      randomID = genID(base) % 100000
       while (ids_generated.contains( randomID )) {
-	randomID = genID(base)  
+	randomID = genID(base)  % 100000
       }
-      ids_generated.prepend( randomID );
+      ids_generated.append( randomID );
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
       nodeArray = nodeArray += nodey
       counter += 1
@@ -653,17 +686,28 @@ object Pastry {
       nodeArray(i) ! join(nodeArray(i -1 )); 
       //wait for join process to complete
       implicit val timeout = Timeout(20 seconds)
-      var isready: Boolean = false;
-      while (!isready) {
+      var isready: IdRef = new IdRef();
+      isready.id = -1;
+      
+      while (isready.id == -1) {
 	val future = nodeArray(i) ? ReadyQuery
-	isready =  Await.result(future.mapTo[Boolean], timeout.duration )
+	isready =  Await.result(future.mapTo[IdRef], timeout.duration )
       }
+      //printf("Node %d joined to %d\n", ids_generated(i), isready.id);
+      var v1 = calculate_join(i, ids_generated(i), ids_generated);
+      var d1 = (v1 - ids_generated(i)).abs
+      var d2 = (ids_generated(i) - isready.id).abs
+
+      if (d1 >= d2) { 
+      }// do nothing
+      else
+	printf("%d incorrectly routed to %d, could have been %d\n", ids_generated(i), isready.id, calculate_join(i, ids_generated(i), ids_generated))
     }
 
     println("Done with setup.")
 
     //now let's print the system
-    for (i <- 0 until 50) {
+/*    for (i <- 0 until 50) {
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printstate
@@ -679,7 +723,7 @@ object Pastry {
       val future = nodeArray(i) ? Printrouting
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration) 
-//    }  
+//    }  */
 
     system.shutdown
     
@@ -723,6 +767,23 @@ object Pastry {
       }
     return myArray
   }
+  
+  def calculate_join(m: Int, id : BigInt, all : ArrayBuffer[BigInt]) : BigInt = {
+    var dist : BigInt = (all(0) - id).abs;
+    var mdist : BigInt = (all(0) - id).abs
+    var n : BigInt = all(0);
+    var i : Int = 0;
+    for (i <- 1 to m) {
+      if (all(i) != id) {
+	dist = (all(i) - id).abs
+	if (dist < mdist) {
+	  mdist = dist;
+	  n = all(i);
+	}
+      }
+    }
+    return n;
 
+  }
 }
 
