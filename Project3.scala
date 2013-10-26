@@ -77,7 +77,6 @@ object Pastry {
 
 	R( index( l, k ) ) = idin;
 
-
 	for (i <- 0 until Rn) {
 	  if (i != j) {
 	    if (r_in( index(l, i) ) != null) {
@@ -97,7 +96,8 @@ object Pastry {
 	  var myid : IdRef  = new IdRef();
 	  myid.id = id;
 	  myid.ref = self;
-	  key.ref ! inittable( myid, R );
+//	  key.ref ! inittable( myid, R );
+	  key.ref ! addToRouting( R, myid );
 	}
 	
 	var b2 : Boolean = false;
@@ -330,21 +330,20 @@ object Pastry {
 	var j : Int = 0;
 
 	for (i <- 0 to (l - 1)) {
-	  for (j <- 0 to Rn) {
+	  for (j <- 0 until Rn) {
 	    R(index(i,j)) = routing(index(i,j));
 	  }
 	}
 
        var k : Int = getdigit(id, l);
        var m : Int = getdigit(nID.id, l);
-       for (j <- 0 to Rn) {
+       for (j <- 0 until Rn) {
 	 if (j != k && j != m) {
 	   R(index(l, j)) = routing(index(l, j))
 	 }
        }
        
        R( index(l, m) ) = nID;
-
       
      }
      /* case addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef) => {
@@ -634,9 +633,9 @@ object Pastry {
     var randomID:BigInt = 0
     var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
-      randomID = genID(base) % 1000
+      randomID = genID(base)  
       while (ids_generated.contains( randomID )) {
-	randomID = genID(base) % 1000
+	randomID = genID(base)  
       }
       ids_generated.prepend( randomID );
       var nodey = system.actorOf(Props(classOf[Node],randomID,base), counter.toString)
@@ -663,23 +662,23 @@ object Pastry {
     println("Done with setup.")
 
     //now let's print the system
-    for (i <- 0 until N) {
+/*    for (i <- 0 until N) {
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printstate
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration )
-    }
+    }*/
 
-    /**print routing tables
-    for(i<-0 until N){
+//    print routing tables
+//    for(i<-0 until N){
       println("Routing table for node " + i)
       implicit val timeout = Timeout(20 seconds)
       var isready: Boolean = false;
       val future = nodeArray(i) ? Printrouting
       println();
-      isready =  Await.result(future.mapTo[Boolean], timeout.duration) */
-    //}  
+      isready =  Await.result(future.mapTo[Boolean], timeout.duration) 
+//    }  
 
     system.shutdown
     
