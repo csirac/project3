@@ -22,10 +22,12 @@ case class Printrouting
 case class addToRouting(routing: ArrayBuffer[IdRef],n:IdRef)
 case class CheckLeaves
 case class CheckR
+case class SendRequest
 
 class IdRef {
   var ref : ActorRef = null;
   var id : BigInt = BigInt(-1);
+  var jumps : Int = 0;
 }
 
 
@@ -43,6 +45,15 @@ object Pastry {
     var Z : IdRef = new IdRef();
 
     def receive = {
+      case SendRequest => {
+	//Generate a random number, and
+	//route it through the network.
+	var number : BigInt = genID( base );
+	var msgref : IdRef = new IdRef();
+	msgref.jumps = 0;
+	
+	self ! route( number.toString, msgref );
+      }
       case join(n) => {
 	var myid : IdRef = new IdRef;
 
@@ -798,7 +809,21 @@ object Pastry {
       println();
       isready =  Await.result(future.mapTo[Boolean], timeout.duration) 
 //    }  */
-  
+    
+    //Schedule the periodic requests
+    import system.dispatcher
+
+    for (i <- 0 until N) {
+      system.scheduler.schedule(1 seconds, 1 seconds, nodeArray(i), SendRequest );
+    }
+
+    implicit val timeout = Timeout(20 seconds)
+    var isready: Boolean = false;
+
+//    while (isready == false) {
+//      val future = Listener ? ReadyQuery
+//      isready =  Await.result(future.mapTo[IdRef], timeout.duration )
+//    }
 
     system.shutdown
     
