@@ -222,9 +222,9 @@ run 1000
 run 10000
 sbt run 100
 run 100
-compile
-run 100
 run 100 2
-run 1000 5
-run 10000 2
-run 100000 2
+run 100 10
+run 1000 10
+run 10000 10
+run 1000 10
+run 10000 10

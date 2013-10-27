@@ -133,7 +133,7 @@ object Pastry {
 	    b2 = (L_large( L_large.size - 1).id >= key.id );
 	  }
 	  else {
-	    b2 = (L_small(0).id <= key.id && L_large( L_large.size - 1 ).id >= key.id);
+	    b2 = ((L_small(0).id <= key.id) && (L_large( L_large.size - 1 ).id >= key.id));
 	  }
 	}
 	if (b2) {

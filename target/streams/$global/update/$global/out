@@ -1,4 +1,4 @@
-[0m[[0minfo[0m] [0mUpdating {file:/home/tori/COP5615/NewProject3/}newproject3...[0m
+[0m[[0minfo[0m] [0mUpdating {file:/home/alan/repo/}repo...[0m
 [0m[[0mdebug[0m] [0m:: resolving dependencies :: project-1#project-1_2.10;0.0[0m
 [0m[[0mdebug[0m] [0m	confs: [compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom, scala-tool][0m
 [0m[[0mdebug[0m] [0m	validate = true[0m
@@ -7,7 +7,7 @@
 [0m[[0mdebug[0m] [0m== resolving dependencies for project-1#project-1_2.10;0.0 [compile][0m
 [0m[[0mdebug[0m] [0m== resolving dependencies project-1#project-1_2.10;0.0->org.scala-lang#scala-library;2.10.2 [compile->default(compile)][0m
 [0m[[0minfo[0m] [0mResolving org.scala-lang#scala-library;2.10.2 ...[0m
-[0m[[0mdebug[0m] [0msbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@3d953a4e[0m
+[0m[[0mdebug[0m] [0msbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@45e0e46[0m
 [0m[[0mdebug[0m] [0msbt-chain: module revision found in cache: org.scala-lang#scala-library;2.10.2[0m
 [0m[[0mdebug[0m] [0m	local: revision in cache: org.scala-lang#scala-library;2.10.2[0m
 [0m[[0mdebug[0m] [0m	found org.scala-lang#scala-library;2.10.2 in sbt-chain[0m
@@ -363,7 +363,7 @@
 [0m[[0mdebug[0m] [0m== resolving dependencies project-1#project-1_2.10;0.0->org.scala-lang#scala-library;2.10.2 [scala-tool->compile][0m
 [0m[[0mdebug[0m] [0m== resolving dependencies project-1#project-1_2.10;0.0->org.scala-lang#scala-library;2.10.2 [scala-tool->master][0m
 [0m[[0mdebug[0m] [0m== resolving dependencies project-1#project-1_2.10;0.0->org.scala-lang#scala-library;2.10.2 [scala-tool->optional(default)][0m
-[0m[[0mdebug[0m] [0m	resolved ivy file produced in /home/tori/COP5615/NewProject3/target/resolution-cache/project-1/project-1_2.10/0.0/resolved.xml.xml[0m
+[0m[[0mdebug[0m] [0m	resolved ivy file produced in /home/alan/repo/target/resolution-cache/project-1/project-1_2.10/0.0/resolved.xml.xml[0m
 [0m[[0mdebug[0m] [0m:: downloading artifacts ::[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang#scala-library;2.10.2!scala-library.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] com.typesafe.akka#akka-actor_2.10;2.2.0!akka-actor_2.10.jar[0m
@@ -376,19 +376,19 @@
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang#scala-reflect;2.10.2!scala-reflect.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang#jline;2.10.2!jline.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.fusesource.jansi#jansi;1.4!jansi.jar[0m
-[0m[[0mdebug[0m] [0m:: resolution report :: resolve 1037ms :: artifacts dl 47ms[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 compile produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-compile.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 runtime produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-runtime.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 test produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-test.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 provided produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-provided.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 optional produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-optional.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 compile-internal produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-compile-internal.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 runtime-internal produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-runtime-internal.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 test-internal produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-test-internal.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 plugin produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-plugin.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 sources produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-sources.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 docs produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-docs.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 pom produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-pom.xml[0m
-[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 scala-tool produced in /home/tori/COP5615/NewProject3/target/resolution-cache/reports/project-1-project-1_2.10-scala-tool.xml[0m
-[0m[[0mdebug[0m] [0m	resolve done (1037ms resolve - 47ms download)[0m
+[0m[[0mdebug[0m] [0m:: resolution report :: resolve 598ms :: artifacts dl 33ms[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 compile produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-compile.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 runtime produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-runtime.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 test produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-test.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 provided produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-provided.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 optional produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-optional.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 compile-internal produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-compile-internal.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 runtime-internal produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-runtime-internal.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 test-internal produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-test-internal.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 plugin produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-plugin.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 sources produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-sources.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 docs produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-docs.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 pom produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-pom.xml[0m
+[0m[[0mdebug[0m] [0m	report for project-1#project-1_2.10;0.0 scala-tool produced in /home/alan/repo/target/resolution-cache/reports/project-1-project-1_2.10-scala-tool.xml[0m
+[0m[[0mdebug[0m] [0m	resolve done (598ms resolve - 33ms download)[0m
 [0m[[0minfo[0m] [0mDone updating.[0m
