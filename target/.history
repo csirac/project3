@@ -285,3 +285,7 @@ exit
 run 100
 run 1000
 exit
+compie
+compile
+run 100
+exit

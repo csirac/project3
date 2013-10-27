@@ -724,7 +724,10 @@ object Pastry {
 	messages += 1
       }
       case Calculate => {
-	val average = sum/messages /**average number of jumps that a message took*/
+	var average = 0
+	if (messages != 0) {
+	  average = sum/messages /**average number of jumps that a message took*/
+	}
 	sender ! average
       }
       case MessagesReceived => {
@@ -802,14 +805,14 @@ object Pastry {
     }
 
     /**ask listener*/
-      implicit val timeout = Timeout(20 seconds)
-      var Messages: Int = 0
-      val future = listener ? MessagesReceived
-      Messages =  Await.result(future.mapTo[Int], timeout.duration )
-      println(Messages)
-
+    implicit val timeout = Timeout(20 seconds)
+    var Messages: Int = 0
+    val future = listener ? MessagesReceived
+    Messages =  Await.result(future.mapTo[Int], timeout.duration )
+    println(Messages)
 
     println("Done with setup.")
+ 
 
     //now let's print the system
 
