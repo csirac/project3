@@ -228,3 +228,19 @@ run 1000 10
 run 10000 10
 run 1000 10
 run 10000 10
+exit
+run 100 2
+compile
+run 100 4
+run 1000 4
+run 10000 10
+run 20 4
+run 200 4
+run 1000 4
+run 25000 2
+run 15000 4
+run 100 2
+run 1000 4
+run 15000 4
+run 10000
+run 10000 4

@@ -1,0 +1,15 @@
+Team members: Alan Kuhnle, Victoria Crawford
+
+What is working: A pastry network is created according to the specifications
+given, with arbitrary number of nodes.  Each node then sends a user-specified
+number of messages, one per second. A message is of the form 
+(String, Key), where Key is a class containing a number (indicating where
+the message is to be routed), an actorref (only used for join messages),
+and a counter, to determine how many times the message is passed to
+nodes throughout the network.  
+
+The messages sent by the nodes are a randomly generated string, to be routed
+to a randomly chosen number, between 0 and 2^128 - 1.
+
+The largest network we constructed had 20000 nodes, with 4 messages sent
+per node.  The average number of jumps was 5.

@@ -180,44 +180,15 @@ object Pastry {
 		  //forward to nearest leaf
 		  forward_to_nearest_leaf(msg, key);
 		}
-		// for (i <- 0 until L_small.size) {
-		//   if (cont && (L_small(i) != null)) {
-		//     dist = (L_small(i).id - key.id).abs;
-		//     if (dist < mdist) {
-		//       //must agree on at least prefix size l, other distance could not be less
-		//       cont = false;
-		//       println("Forwarding to leaf node")
-		//       L_small(i).ref ! route(msg,key)
-		//     }
-		//   }
-		// }
 
-		// for (i <- 0 until L_large.size) {
-		//   if (cont && L_large(i) != null) {
-		//     dist = (L_large(i).id - key.id).abs;
-		//     if (dist < mdist) {
-		//       cont = false;
-		//       println("Forwarding to leaf node")
-		//       L_large(i).ref ! route(msg,key)
-		//     }
-		//   }
-		// }
-
-		// if (cont) {//nobody is closer than us
-		//   println("Delivering to self")
-		//   self ! deliver( msg, key );
-		// }
 
 	      }
 	    }
 	key.jumps += 1
       }
       case deliver( msg: String, key : IdRef ) => {
-//	printf("Node %d received message: ", id );
-//	println( msg );
+
 	if (msg == "join") {
-//	  printf("node %d closest to %d\n", key.id, id);
-	  //println("Sending state...")
 	  var Zout : IdRef = new IdRef();
 	  Zout.id = id;
 	  Zout.ref = self;
@@ -284,13 +255,11 @@ object Pastry {
       case bigLeaf(leaf:IdRef) => {
 	if(leaf.id>id){
 	  addToLargeLeafs(leaf)
-	  trim_routing_table();
 	}
       }
       case smallLeaf(leaf:IdRef) => {
 	if(leaf.id < id) {
 	  addToSmallLeafs(leaf)
-	  trim_routing_table();
 	}
       }
       case ReadyQuery => {
@@ -328,12 +297,7 @@ object Pastry {
 	    if (R(index(i,j)) != null) {
 	      var seqArray = BigInttoArr(R(index(i,j)).id,base)
 	      print(sequenceMatch(seqArray,BigInttoArr(id,base)))
-	      /**var k = 31
-	      while (k >= 0){
-		print(sequenceMatches(seqArray(k),R))
-		print(",")
-		k += -1
-	      }*/
+
 	      print("     ");
 	    }
 	    else {
@@ -342,29 +306,7 @@ object Pastry {
 	  }
 	  println();
 	}
-	 
-	       
-      
-	//var row = 0
-	//var column = 0
-	//println()
-	// while(row<32){
-	//   while(column<16){
-	//     if(R(index(row,column))!=null){
-	//       var tableSeq = BigInttoArr(R(16*row+column).id,base)
-	//       for(i <- 31 to 0) {
-	// 	print(tableSeq(i) + ",")
-	//       }	      
-	//     }
-	//     else print("null")
-	    
-	//     print("   ")
-	//     column += 1
-	//   }
-	//   column = 0
-	//   println()
-	//  row += 1
-	//}
+
 	sender ! true
       }
      case addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef) => {
@@ -425,57 +367,6 @@ object Pastry {
       }
   
       
-     /* case addToRouting(routing:ArrayBuffer[IdRef],nID:IdRef) => {
-	var neighborID = BigInttoArr(nID.id,base) /**find id sequences*/
-	var myID = BigInttoArr(id,base)
-	val matches = sequenceMatch(neighborID,myID)/**same up to place matches-1*/
-	neighborID = flipSequence( neighborID) ;
-	myID = flipSequence( myID );
-	var i=0 /**row of routing*/
-	var j=0 /**column of routing*/
-
-	while(i<32){ /**sequences are of length 32, go through each row*/
-	  if(i<matches){
-	    while(j<base){ /**copy entire row*/
-	      if((R(index(i,j)))==null){
-		R(index(i,j))=routing(index(i,j))
-		if (R(index(i,j)) != null)
-		   if (R(index(i,j)).id == id)
-		      println("Error: adding self to routing table in tori's function clause 1");
-	      }
-	      j+=1
-	    }
-	  }
-	      else { 
-		if (i==matches){/**copy row, except when column equals myID(matches)*/
-		  while (j<base){
-		    if(((R(index(i,j)))==null)&&(j!=myID(matches))){
-		      R(index(i,j))=routing(index(i,j))
-		      if (R(index(i,j)) != null)
-			  if (R(index(i,j)).id == id)
-			    println("Error: adding self to routing table in tori's function clause 2");
-		    }
-		    j+=1
-		  }
-		} else {
-		  if (i>matches) {
-		    while((routing(index(i,j))==null)&&(j<(base-1))) {
-		      j+=1
-		    }
-		  }
-		
-		  if(R(index(matches,neighborID(matches)))==null){
-		    if (j != base)
-		      R(index(matches,neighborID(neighborID.length-1-matches))) = routing(index(i,j))
-		  }
-		}
-		}
-	  i+=1
-	  j=0
-	      
-	
-	}
-      }*/
     }
     def send_to_nearest_leaf(msg : String, key : IdRef) {
       var dist : BigInt = (id - key.id).abs;
@@ -532,28 +423,6 @@ object Pastry {
       min.ref ! route( msg, key );
     }
 
-    def trim_routing_table() {
-      // var i : Int = 0;
-      // var j : Int = 0;
-      // for (i <- 0 until L_small.size) {
-      // 	for (j <- 0 until R.size) {
-      // 	  if (R(j) != null) {
-      // 	    if (L_small(i).id == R(j).id) {
-      // 	      R(j) = null
-      // 	    }
-      // 	  }
-      // 	}
-      // }
-      // for (i <- 0 until L_large.size) {
-      // 	for (j <- 0 until R.size) {
-      // 	  if (R(j) != null) {
-      // 	    if (L_large(i).id == R(j).id) {
-      // 	      R(j) = null
-      // 	    }
-      // 	  }
-      // 	}
-      // }
-    }
     def addToSmallLeafs(leaf:IdRef){ /**add one leaf to small leafs*/
       var i : Int = 0;
       //add leaf
@@ -576,30 +445,7 @@ object Pastry {
 	L_small = L_small.drop(1);
       }
 	
-	
-      
-      // var sort:Boolean = false
-      // if(L_small.length==0){/**empty, does not need to be sorted*/ 
-      // 	L_small += leaf
-      // }
-      // else if(L_small.length<base){ /**not full*/
-      // 	L_small.prepend(leaf)
-      // 	sort = true
-      // }
-      // else if ((L_small.length==base)&&(leaf.id>L_small(0).id)){/**full, and the leaf is in range to be added*/ 
-      // 	L_small(0)=leaf
-      // 	sort = true
-      // }
-      // if(sort){ /**needs to be sorted*/ 
-      // 	var j = 1
-      // 	var temp:IdRef = null
-      // 	while((leaf.id>L_small(j).id)&&(j<L_small.length)){/**sort leafs(i) into L_small array*/
-      // 	  temp=L_small(j)
-      // 	  L_small(j)=leaf
-      // 	  L_small(j-1)=temp
-      // 	  j+=1
-      // 	}   
-      // }
+
     }
     def addToLargeLeafs(leaf:IdRef){
       var i : Int = 0;
@@ -623,34 +469,7 @@ object Pastry {
 	//delete largest
 	L_large = L_large.dropRight(1);
       }
-    // var sort:Boolean = false
-    //   if(L_large.length==0){/**empty, does not need to be sorted*/ 
-    // 	L_large = L_large += leaf
-    //   }
-    //   else {
-    // 	if(L_large.length<base){ /**not full*/
-    // 	  L_large= L_large += leaf
-    // 	  sort = true
-    // 	}
-    // 	else {
 
-    // 	  if ((L_large.length==base)&&(leaf.id<L_large(L_large.length).id)){/**full, and the leaf is in range to be added*/ 
-    // 	    L_large(L_large.length-1)=leaf
-    // 	    sort = true
-    // 	  }
-    // 	}
-    //   }
-
-    //   if(sort){ /**needs to be sorted*/ 
-    // 	var j = L_large.length-1
-    // 	var temp:IdRef = null
-    // 	while((leaf.id<L_large(j-1).id)&&(j>0)){/**sort leafs(i) into L_small array*/
-    // 	  temp=L_large(j-1)
-    // 	  L_large(j-1)=leaf
-    // 	  L_large(j)=temp
-    // 	  j+= -1
-    // 	}   
-    //   }
     }   
     def sequenceMatch(x:ArrayBuffer[Int],y:ArrayBuffer[Int]):Int ={ /**finds how long sequences match from beginning*/
       var i = x.length-1
@@ -699,17 +518,8 @@ object Pastry {
     def getdigit(m: BigInt, k: Int) : Int = {
 
       var l : Int = 31 - k;
-     // printf("getdigit l: %d\n", l)
       var tmp : BigInt  = m % BigInt(16).pow(l + 1)
-     // printf("getdigit tmp: %d\n", tmp)
       tmp /= BigInt(16).pow(l)
-      //printf("getdigit tmp: %d\n", tmp)
-
- 
-    //  val seqArray = BigInttoArr(m,16)
-    //  val fseqArray = flipSequence(seqArray)
-    //  return fseqArray(k)
-
       val r : Int = tmp.toInt
       
       return r; 
@@ -788,36 +598,33 @@ object Pastry {
 	isready =  Await.result(future.mapTo[IdRef], timeout.duration )
       }
       //printf("Node %d joined to %d\n", ids_generated(i), isready.id);
-      var v1 = calculate_join(i, ids_generated(i), ids_generated);
-      var d1 = (v1 - ids_generated(i)).abs
-      var d2 = (ids_generated(i) - isready.id).abs
+//      var v1 = calculate_join(i, ids_generated(i), ids_generated);
+//      var d1 = (v1 - ids_generated(i)).abs
+//      var d2 = (ids_generated(i) - isready.id).abs
 
-      if (d1 >= d2) { 
-      }// do nothing
-      else
-	printf("%d incorrectly routed to %d, could have been %d\n", ids_generated(i), isready.id, calculate_join(i, ids_generated(i), ids_generated))
+//      if (d1 >= d2) { 
+//      }// do nothing
+//      else
+//	printf("%d incorrectly routed to %d, could have been %d\n", ids_generated(i), isready.id, calculate_join(i, ids_generated(i), ids_generated))
     }
 
     /**test leaves*/
-    for (i <- 1 until N) {
-      implicit val timeout = Timeout(20 seconds)
-      var isready: Boolean = false;
-      val future = nodeArray(i) ? CheckLeaves
-      isready =  Await.result(future.mapTo[Boolean], timeout.duration )
+//    for (i <- 1 until N) {
+ //     implicit val timeout = Timeout(20 seconds)
+ //     var isready: Boolean = false;
+//      val future = nodeArray(i) ? CheckLeaves
+//      isready =  Await.result(future.mapTo[Boolean], timeout.duration )
       
-    }
+ // }
     
     /**test routing tables*/
-    for (i <- 1 until N) {
-      implicit val timeout = Timeout(20 seconds)
-      var isready: Boolean = false;
-      val future = nodeArray(i) ? CheckR
-      isready =  Await.result(future.mapTo[Boolean], timeout.duration )
+ //   for (i <- 1 until N) {
+ //     implicit val timeout = Timeout(20 seconds)
+ //     var isready: Boolean = false;
+ //     val future = nodeArray(i) ? CheckR
+ //     isready =  Await.result(future.mapTo[Boolean], timeout.duration )
       
-    }
-
-    println("Done with setup.")
- 
+ // }
 
     //now let's print the system
 
