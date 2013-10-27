@@ -761,9 +761,9 @@ object Pastry {
     var ids_generated : ArrayBuffer[BigInt] = ArrayBuffer();
     while(counter<N){ /**make nodes*/
 
-      randomID = genID(base) % 100000
+      randomID = genID(base) 
       while (ids_generated.contains( randomID )) {
-	randomID = genID(base)  % 100000
+	randomID = genID(base) 
       }
       ids_generated.append( randomID );
       var nodey = system.actorOf(Props(classOf[Node],randomID,base,listener), counter.toString)
@@ -855,6 +855,10 @@ object Pastry {
       Messages =  Await.result(future.mapTo[Int], timeout.duration )
     }
     
+    implicit val timeout2 = Timeout(20 seconds)
+    val future2 = listener ? Calculate
+    val average =  Await.result(future2.mapTo[Int], timeout2.duration )
+    println("Average jumps: " + average)
 
     system.shutdown
     
